@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-from routers import chat  # ✅ Changed from backend.routers
+from routers import chat, voice
 
 # Create FastAPI app
 app = FastAPI(
@@ -38,6 +38,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(chat.router, prefix="/api", tags=["chat"])
+app.include_router(voice.router, prefix="/api", tags=["voice"])
 
 # Serve static files
 if os.path.exists("static"):
@@ -53,6 +54,7 @@ async def root():
         "version": "1.0.0",
         "endpoints": {
             "chat": "/api/chat",
+            "voice": "/api/voice/transcribe",
             "docs": "/docs",
             "health": "/"
         }

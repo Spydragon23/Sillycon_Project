@@ -60,6 +60,35 @@ export async function sendChatMessage(
   return response.json()
 }
 
+/** Response from POST /api/voice/transcribe */
+export interface VoiceTranscribeResponse {
+  transcript: string
+  sensitive_summary: string | null
+}
+
+/**
+ * Upload an audio blob for transcription and sensitive-content analysis.
+ * Used by the voice privacy education demo.
+ */
+export async function uploadVoiceForTranscription(
+  audioBlob: Blob
+): Promise<VoiceTranscribeResponse> {
+  const formData = new FormData()
+  formData.append("audio", audioBlob, "recording.webm")
+
+  const response = await fetch(`${API_BASE_URL}/api/voice/transcribe`, {
+    method: "POST",
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Transcription failed" }))
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`)
+  }
+
+  return response.json()
+}
+
 /**
  * Check if the backend is available
  */
