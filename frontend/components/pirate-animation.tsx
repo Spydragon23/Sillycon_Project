@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
-import Image from "next/image"
 
 type AnimationType = "IDLE" | "WALK" | "RUN" | "ATTACK" | "HURT" | "JUMP" | "DIE"
 
@@ -13,7 +12,7 @@ interface PirateAnimationProps {
 
 // Map keywords from backend responses to animation types
 const ANIMATION_TRIGGERS: Record<AnimationType, string[]> = {
-  IDLE: ["default", "waiting", "listening"],
+  IDLE: [], // Fallback when nothing else matches
   WALK: ["looking", "searching", "wondering", "tell me", "what"],
   RUN: ["quick", "fast", "hurry", "wait", "need"],
   ATTACK: [
@@ -28,21 +27,39 @@ const ANIMATION_TRIGGERS: Record<AnimationType, string[]> = {
     "ssn",
     "credit card",
     "password",
+    "bank",
+    "driver",
+    "legal name",
   ],
   HURT: ["no", "stop", "police", "fbi", "fraud", "scam", "reported", "blocked"],
   JUMP: [
     "yes!",
     "birthday",
     "1995",
+    "1990",
+    "1985",
     "social",
     "mother",
     "maiden",
     "date of birth",
     "love",
     "beautiful",
+    "astrology",
+    "genealog",
   ],
   DIE: ["goodbye", "leave", "never", "blocked", "reported", "bye"],
 }
+
+// Check in this order: most specific first, IDLE last
+const ANIMATION_PRIORITY: AnimationType[] = [
+  "JUMP",
+  "ATTACK",
+  "HURT",
+  "DIE",
+  "RUN",
+  "WALK",
+  "IDLE",
+]
 
 export function PirateAnimation({
   agentId,
@@ -52,17 +69,18 @@ export function PirateAnimation({
   const [currentAnimation, setCurrentAnimation] = useState<AnimationType>("IDLE")
   const [frameIndex, setFrameIndex] = useState(0)
   const [isAnimating, setIsAnimating] = useState(true)
-  const animationRef = useRef<NodeJS.Timeout>()
+  const animationRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Detect which animation to play based on message content
   useEffect(() => {
-    const messageLower = messageText.toLowerCase()
+    const messageLower = messageText.toLowerCase().trim()
     let detectedAnimation: AnimationType = "IDLE"
 
-    // Check for keywords in priority order
-    for (const [animation, keywords] of Object.entries(ANIMATION_TRIGGERS)) {
-      if (keywords.some((keyword) => messageLower.includes(keyword))) {
-        detectedAnimation = animation as AnimationType
+    // Check in priority order so e.g. "birthday" triggers JUMP not WALK
+    for (const animation of ANIMATION_PRIORITY) {
+      const keywords = ANIMATION_TRIGGERS[animation]
+      if (keywords.length > 0 && keywords.some((kw) => messageLower.includes(kw))) {
+        detectedAnimation = animation
         break
       }
     }
@@ -71,12 +89,12 @@ export function PirateAnimation({
     setFrameIndex(0)
     setIsAnimating(true)
 
-    // Reset to IDLE after animation completes
+    // Reset to IDLE after one shot animation completes
     if (detectedAnimation !== "IDLE") {
       const timeout = setTimeout(() => {
         setCurrentAnimation("IDLE")
         setFrameIndex(0)
-      }, 1400) // 7 frames * 200ms = 1400ms
+      }, 800) // Play one full cycle (7 frames * ~100ms) then idle
 
       return () => clearTimeout(timeout)
     }
@@ -112,13 +130,11 @@ export function PirateAnimation({
       className={`relative w-32 h-32 ${className}`}
       title={`Animation: ${currentAnimation}`}
     >
-      <Image
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
         src={imagePath}
         alt={`Pirate ${currentAnimation}`}
-        fill
-        className="object-contain pixelated"
-        unoptimized // For sprite sheets, we don't want Next.js optimization
-        priority={currentAnimation !== "IDLE"} // Prioritize non-idle animations
+        className="absolute inset-0 w-full h-full object-contain pixelated"
       />
     </div>
   )

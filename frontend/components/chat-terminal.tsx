@@ -60,6 +60,7 @@ export function ChatTerminal({
   const [inputValue, setInputValue] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [chatHistory, setChatHistory] = useState<ApiChatMessage[]>([])
+  const [chatHeadTriggerText, setChatHeadTriggerText] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const agent = AGENTS.find((a) => a.id === selectedAgent) as Agent
@@ -86,6 +87,7 @@ export function ChatTerminal({
       },
     ])
     setChatHistory([])
+    setChatHeadTriggerText("")
   }, [selectedAgent, agent?.name])
 
   const handleSend = async () => {
@@ -122,6 +124,11 @@ export function ChatTerminal({
         timestamp: getTimestamp(),
       }
       setMessages((prev) => [...prev, agentMsg])
+
+      // Drive chat head animation from latest pirate response
+      if (selectedAgent === "archivist") {
+        setChatHeadTriggerText(response.response)
+      }
 
       // Maybe add a system message
       if (Math.random() > 0.5) {
@@ -276,6 +283,17 @@ export function ChatTerminal({
           </div>
         </div>
 
+        {/* Single chat head - pirate only, animations trigger from latest response */}
+        {selectedAgent === "archivist" && (
+          <div className="shrink-0 flex justify-center py-4 px-2 border-b border-border/20 bg-background/30">
+            <PirateAnimation
+              agentId={selectedAgent}
+              messageText={chatHeadTriggerText}
+              className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44"
+            />
+          </div>
+        )}
+
         {/* Messages */}
         <ScrollArea className="flex-1 px-4 py-3" ref={scrollRef}>
           <div className="flex flex-col gap-3">
@@ -326,18 +344,7 @@ export function ChatTerminal({
               }
 
               return (
-                <div key={msg.id} className="flex justify-start animate-slide-up gap-3">
-                  {/* Pirate Animation */}
-                  {selectedAgent === "archivist" && (
-                    <div className="shrink-0">
-                      <PirateAnimation
-                        agentId={selectedAgent}
-                        messageText={msg.text}
-                        className="w-20 h-20 sm:w-24 sm:h-24"
-                      />
-                    </div>
-                  )}
-                  
+                <div key={msg.id} className="flex justify-start animate-slide-up">
                   <div className="max-w-[75%] glass-panel-active rounded-xl rounded-bl-sm px-4 py-2.5">
                     <p className="font-mono text-xs text-foreground/90 leading-relaxed">
                       {msg.text}
