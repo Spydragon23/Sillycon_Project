@@ -10,6 +10,8 @@ import { type Agent, AGENTS } from "@/components/agent-select-screen"
 import { SketchyPermissionDialog } from "@/components/sketchy-permission-dialog"
 import { CameraView } from "@/components/camera-view"
 import { sendChatMessage, type ChatMessage as ApiChatMessage } from "@/lib/api"
+import { PirateAnimation } from "@/components/pirate-animation"
+import { TrollAnimation } from "@/components/troll-animation"
 
 interface Message {
   id: string
@@ -152,6 +154,11 @@ useEffect(() => {
         timestamp: getTimestamp(),
       }
       setMessages((prev) => [...prev, agentMsg])
+
+      // Drive chat head animation from latest response (pirate or troll)
+      if (selectedAgent === "archivist" || selectedAgent === "jester") {
+        setChatHeadTriggerText(response.response)
+      }
 
       // Maybe add a system message
       if (Math.random() > 0.5) {
@@ -322,6 +329,26 @@ useEffect(() => {
             </span>
           </div>
         </div>
+
+        {/* Single chat head - animations trigger from latest response */}
+        {selectedAgent === "archivist" && (
+          <div className="shrink-0 flex justify-center py-4 px-2 border-b border-border/20 bg-background/30">
+            <PirateAnimation
+              agentId={selectedAgent}
+              messageText={chatHeadTriggerText}
+              className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44"
+            />
+          </div>
+        )}
+        {selectedAgent === "jester" && (
+          <div className="shrink-0 flex justify-center py-4 px-2 border-b border-border/20 bg-background/30">
+            <TrollAnimation
+              agentId={selectedAgent}
+              messageText={chatHeadTriggerText}
+              className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44"
+            />
+          </div>
+        )}
 
         {/* Messages */}
         <ScrollArea className="flex-1 px-4 py-3" ref={scrollRef}>

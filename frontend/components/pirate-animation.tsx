@@ -61,26 +61,47 @@ const ANIMATION_PRIORITY: AnimationType[] = [
   "IDLE",
 ]
 
+// Chance to actually play when keywords match (stops common words hogging one animation)
+const TRIGGER_CHANCE: Record<AnimationType, number> = {
+  IDLE: 1,
+  JUMP: 0.85,
+  ATTACK: 0.8,
+  HURT: 0.85,
+  DIE: 0.9,
+  RUN: 0.45,
+  WALK: 0.4,
+}
+
+const PIRATE_VARIANTS = [1, 2, 3] as const
+type PirateVariant = (typeof PIRATE_VARIANTS)[number]
+
+function getRandomVariant(): PirateVariant {
+  return PIRATE_VARIANTS[Math.floor(Math.random() * PIRATE_VARIANTS.length)]
+}
+
 export function PirateAnimation({
   agentId,
   messageText,
   className = "",
 }: PirateAnimationProps) {
+  const [pirateVariant] = useState<PirateVariant>(getRandomVariant)
   const [currentAnimation, setCurrentAnimation] = useState<AnimationType>("IDLE")
   const [frameIndex, setFrameIndex] = useState(0)
   const [isAnimating, setIsAnimating] = useState(true)
   const animationRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Detect which animation to play based on message content
+  // Detect which animation to play based on message content (with randomness so common words don't hog)
   useEffect(() => {
     const messageLower = messageText.toLowerCase().trim()
     let detectedAnimation: AnimationType = "IDLE"
 
-    // Check in priority order so e.g. "birthday" triggers JUMP not WALK
     for (const animation of ANIMATION_PRIORITY) {
       const keywords = ANIMATION_TRIGGERS[animation]
       if (keywords.length > 0 && keywords.some((kw) => messageLower.includes(kw))) {
-        detectedAnimation = animation
+        const chance = TRIGGER_CHANCE[animation]
+        if (Math.random() < chance) {
+          detectedAnimation = animation
+        }
         break
       }
     }
@@ -121,9 +142,11 @@ export function PirateAnimation({
   // Only show for pirate agent
   if (agentId !== "archivist") return null
 
-  const pirateVariant = "1" // Can be 1, 2, or 3
   const framePadded = String(frameIndex).padStart(3, "0")
-  const imagePath = `/pirate_sprites/PNG/${pirateVariant}/${pirateVariant}_entity_000_${currentAnimation}_${framePadded}.png`
+  const imagePath =
+    pirateVariant === 3
+      ? `/pirate_sprites/PNG/3/3_3-PIRATE_${currentAnimation}_${framePadded}.png`
+      : `/pirate_sprites/PNG/${pirateVariant}/${pirateVariant}_entity_000_${currentAnimation}_${framePadded}.png`
 
   return (
     <div

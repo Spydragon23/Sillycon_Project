@@ -6,27 +6,27 @@ import { Button } from "@/components/ui/button"
 
 const SKETCHY_WARNINGS = {
   camera: [
-    "NODE://7 is requesting access to your optical input device.",
-    "WARNING: Camera feed may be routed through 3 unverified relay nodes.",
-    "Visual telemetry will be archived for an undefined retention period.",
-    "Agent may analyze facial microexpressions during session.",
-    "Granting access allows passive biometric data collection.",
+    "Safety check: This app is asking to use your camera.",
+    "WARNING: A camera can show your face, your room, and where you are.",
+    "Anything on camera can be recorded or shared without you noticing.",
+    "Scammers may use your photo/video to pretend to be you (fake accounts).",
+    "Only allow camera access if a trusted adult says its OK.",
   ],
   gallery: [
-    "NODE://7 is requesting read access to your local image vault.",
-    "WARNING: File metadata (GPS, timestamps, device info) will be extracted.",
-    "Image hashes will be cross-referenced against 14 known databases.",
-    "Agent may flag and quarantine files matching known patterns.",
-    "Thumbnail previews will be cached on the relay node for 72 hours.",
+    "Safety check: This app is asking to open your photos.",
+    "WARNING: Photos can contain private info (faces, school, home, location).",
+    "Some photos include hidden data like where/when it was taken.",
+    "Sharing photos can reveal your routines and who you are with.",
+    "Only pick a photo you feel safe sharing. Never share IDs or addresses.",
   ],
 }
 
 const FINE_PRINT = [
-  "By granting access you waive all expectation of visual privacy for this session.",
-  "Optical data may be shared with other agents without further notice.",
-  "NODE://7 is not responsible for what is seen or what sees you.",
-  "Revoking access does not guarantee deletion of already-captured frames.",
-  "This permission cannot be fully revoked until the session terminates.",
+  "Tip: You can usually remove permissions later in your browser or device settings.",
+  "Tip: If something asks for camera/photos and it doesnt make sense, press Deny.",
+  "Tip: Dont share anything that could identify you: full name, school, address.",
+  "Tip: If a site pressures you to allow access fast, thats a red flag.",
+  "Tip: Ask a trusted adult if youre unsure.",
 ]
 
 interface SketchyPermissionDialogProps {

@@ -16,7 +16,10 @@ load_dotenv()
 router = APIRouter()
 
 # Initialize OpenAI client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+api_key = os.getenv("OPENAI_API_KEY")
+if not api_key or api_key == "your-openai-api-key-here":
+    raise ValueError("Please set a valid OpenAI API key in your .env file")
+client = OpenAI(api_key=api_key)
 
 # Professional progressive scammer prompts - WITH CHARACTER PERSONALITIES
 SYSTEM_PROMPTS = {
