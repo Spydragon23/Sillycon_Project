@@ -10,6 +10,7 @@ import { type Agent, AGENTS } from "@/components/agent-select-screen"
 import { SketchyPermissionDialog } from "@/components/sketchy-permission-dialog"
 import { CameraView } from "@/components/camera-view"
 import { sendChatMessage, type ChatMessage as ApiChatMessage } from "@/lib/api"
+import { PirateAnimation } from "@/components/pirate-animation"
 
 interface Message {
   id: string
@@ -325,7 +326,18 @@ export function ChatTerminal({
               }
 
               return (
-                <div key={msg.id} className="flex justify-start animate-slide-up">
+                <div key={msg.id} className="flex justify-start animate-slide-up gap-3">
+                  {/* Pirate Animation */}
+                  {selectedAgent === "archivist" && (
+                    <div className="shrink-0">
+                      <PirateAnimation
+                        agentId={selectedAgent}
+                        messageText={msg.text}
+                        className="w-20 h-20 sm:w-24 sm:h-24"
+                      />
+                    </div>
+                  )}
+                  
                   <div className="max-w-[75%] glass-panel-active rounded-xl rounded-bl-sm px-4 py-2.5">
                     <p className="font-mono text-xs text-foreground/90 leading-relaxed">
                       {msg.text}
