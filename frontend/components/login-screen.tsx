@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { playClick, playHover } from "@/lib/sounds"
 
 interface LoginScreenProps {
   onConnect: (alias: string) => void
@@ -14,6 +15,7 @@ export function LoginScreen({ onConnect }: LoginScreenProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    playClick()
     onConnect(alias || "ANONYMOUS")
   }
 
@@ -102,6 +104,7 @@ export function LoginScreen({ onConnect }: LoginScreenProps) {
 
               <Button
                 type="submit"
+                onMouseEnter={playHover}
                 className="w-full font-mono tracking-[0.25em] text-sm h-11 rounded-xl bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 hover:border-primary/50 transition-all duration-300 mt-2"
               >
                 CONNECT

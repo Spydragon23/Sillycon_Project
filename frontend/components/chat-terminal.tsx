@@ -11,6 +11,7 @@ import { SketchyPermissionDialog } from "@/components/sketchy-permission-dialog"
 import { VoiceEducationDialog } from "@/components/voice-education-dialog"
 import { CameraView } from "@/components/camera-view"
 import { sendChatMessage, uploadVoiceForTranscription, type ChatMessage as ApiChatMessage } from "@/lib/api"
+import { playClick, playHover } from "@/lib/sounds"
 import { useVoiceRecording } from "@/hooks/use-voice-recording"
 import { PirateAnimation } from "@/components/pirate-animation"
 import { TrollAnimation } from "@/components/troll-animation"
@@ -93,6 +94,10 @@ function AgentFlyToWebcam({
 
     const shootTimer = window.setTimeout(() => {
       didShoot = true
+
+      const gunshot = new Audio("/gunshot_sound.webm")
+      gunshot.volume = 0.6
+      gunshot.play().catch(() => {})
 
       const beam = beamRef.current
       if (beam) {
@@ -409,6 +414,7 @@ useEffect(() => {
 
   const handleSend = async () => {
     if (!inputValue.trim() || isLoading) return
+    playClick()
 
     const userMsg: Message = {
       id: `user-${Date.now()}`,
@@ -755,7 +761,11 @@ useEffect(() => {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={stopVoiceRecording}
+                  onClick={() => {
+                    playClick()
+                    stopVoiceRecording()
+                  }}
+                  onMouseEnter={playHover}
                   className="h-7 px-2 font-mono text-[9px] text-destructive hover:bg-destructive/10"
                 >
                   <Square className="w-3 h-3 mr-1" />
@@ -775,7 +785,11 @@ useEffect(() => {
             {/* Camera button */}
             <button
               type="button"
-              onClick={handleCameraClick}
+              onClick={() => {
+                playClick()
+                handleCameraClick()
+              }}
+              onMouseEnter={playHover}
               className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 border ${
                 cameraPermission
                   ? "bg-primary/10 border-primary/30 text-primary hover:bg-primary/20"
@@ -789,7 +803,11 @@ useEffect(() => {
             {/* Gallery button */}
             <button
               type="button"
-              onClick={handleGalleryClick}
+              onClick={() => {
+                playClick()
+                handleGalleryClick()
+              }}
+              onMouseEnter={playHover}
               className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 border ${
                 galleryPermission
                   ? "bg-primary/10 border-primary/30 text-primary hover:bg-primary/20"
@@ -803,7 +821,11 @@ useEffect(() => {
             {/* Voice message button */}
             <button
               type="button"
-              onClick={handleVoiceMessageClick}
+              onClick={() => {
+                playClick()
+                handleVoiceMessageClick()
+              }}
+              onMouseEnter={playHover}
               disabled={voiceState === "recording" || voiceState === "requesting" || voiceUploading}
               className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 border ${
                 voiceState === "recording" || voiceUploading
@@ -825,6 +847,7 @@ useEffect(() => {
               type="submit"
               size="sm"
               disabled={isLoading}
+              onMouseEnter={playHover}
               className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 hover:border-primary/50 rounded-full h-10 w-10 p-0 shrink-0 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Send message"
             >
@@ -893,10 +916,12 @@ useEffect(() => {
             <div className="mt-6">
               <Button
                 onClick={() => {
+                  playClick()
                   setGameOver(false)
                   setShowCamera(false)
                   setPlayAgentAnim(false)
                 }}
+                onMouseEnter={playHover}
                 className="h-12 px-6 rounded-2xl bg-destructive-foreground text-destructive hover:bg-destructive-foreground/90 font-mono font-bold"
               >
                 Back to Safety

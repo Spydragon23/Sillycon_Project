@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { AlertTriangle, Camera, Image, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { playClick, playHover } from "@/lib/sounds"
 
 const SKETCHY_WARNINGS = {
   camera: [
@@ -146,14 +147,22 @@ export function SketchyPermissionDialog({
         {/* Actions */}
         <div className="px-5 pb-5 flex gap-3">
           <Button
-            onClick={onDeny}
+            onClick={() => {
+              playClick()
+              onDeny()
+            }}
+            onMouseEnter={playHover}
             variant="outline"
             className="flex-1 font-mono text-[10px] tracking-[0.1em] uppercase bg-secondary/20 text-muted-foreground border-border/30 hover:bg-secondary/40 rounded-xl h-9 transition-all duration-300"
           >
             Deny Access
           </Button>
           <Button
-            onClick={onGrant}
+            onClick={() => {
+              playClick()
+              onGrant()
+            }}
+            onMouseEnter={playHover}
             className="flex-1 font-mono text-[10px] tracking-[0.1em] uppercase bg-destructive/10 text-destructive border border-destructive/30 hover:bg-destructive/20 hover:border-destructive/50 rounded-xl h-9 transition-all duration-300"
           >
             {showFinePrint ? "Grant Anyway" : "Processing..."}

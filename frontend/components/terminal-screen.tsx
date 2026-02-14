@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { ChatTerminal } from "@/components/chat-terminal"
 import { SystemHud } from "@/components/system-hud"
+import { playClick, playHover } from "@/lib/sounds"
 import { RealityCollapse } from "@/components/reality-collapse"
 import { FloatingNotifications } from "@/components/floating-notifications"
 import { GlitchAlerts } from "@/components/glitch-alerts"
@@ -72,7 +73,11 @@ export function TerminalScreen({ alias, selectedAgent, onBack, onLogout, onCompl
       <nav className="relative z-20 flex items-center justify-between px-4 py-2.5 border-b border-border/30 bg-background/80 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-3">
           <button
-            onClick={onBack}
+            onClick={() => {
+              playClick()
+              onBack()
+            }}
+            onMouseEnter={playHover}
             className="flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5 rounded-lg hover:bg-secondary/30"
             aria-label="Back to agent select"
           >
@@ -115,7 +120,11 @@ export function TerminalScreen({ alias, selectedAgent, onBack, onLogout, onCompl
           </Sheet>
 
           <button
-            onClick={onLogout}
+            onClick={() => {
+              playClick()
+              onLogout()
+            }}
+            onMouseEnter={playHover}
             className="flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground/60 hover:text-destructive transition-colors px-2 py-1.5 rounded-lg hover:bg-destructive/5"
             aria-label="Disconnect session"
           >

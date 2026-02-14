@@ -2,6 +2,7 @@
 
 import { Progress } from "@/components/ui/progress"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { playClick, playHover } from "@/lib/sounds"
 import { AlertTriangle, Mic, ShieldAlert, MessageSquare, Camera, Link2 } from "lucide-react"
 
 const WARNINGS = [
@@ -118,7 +119,11 @@ export function SystemHud({ integrity, onTriggerCollapse }: SystemHudProps) {
           {/* Learn more / report */}
           <section>
             <button
-              onClick={onTriggerCollapse}
+              onClick={() => {
+                playClick()
+                onTriggerCollapse()
+              }}
+              onMouseEnter={playHover}
               className="w-full font-mono text-[10px] tracking-[0.2em] uppercase text-destructive/80 border border-destructive/20 bg-destructive/5 rounded-xl px-3 py-2.5 hover:bg-destructive/10 hover:border-destructive/30 transition-all duration-300"
             >
               View safety report

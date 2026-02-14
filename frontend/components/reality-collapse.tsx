@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, FileText, Shield } from "lucide-react"
+import { playClick, playHover } from "@/lib/sounds"
 
 interface RealityCollapseProps {
   integrity: number
@@ -99,13 +100,21 @@ export function RealityCollapse({ integrity, onReset, onClose }: RealityCollapse
           {/* Actions */}
           <div className="flex gap-3">
             <Button
-              onClick={onReset}
+              onClick={() => {
+                playClick()
+                onReset()
+              }}
+              onMouseEnter={playHover}
               className="flex-1 font-mono text-xs tracking-[0.15em] uppercase bg-destructive/10 text-destructive border border-destructive/30 hover:bg-destructive/20 hover:border-destructive/50 rounded-xl h-10 transition-all duration-300"
             >
               Back to chat
             </Button>
             <Button
-              onClick={onClose}
+              onClick={() => {
+                playClick()
+                onClose()
+              }}
+              onMouseEnter={playHover}
               variant="outline"
               className="flex-1 font-mono text-xs tracking-[0.15em] uppercase bg-secondary/20 text-muted-foreground border-border/30 hover:bg-secondary/40 rounded-xl h-10 transition-all duration-300"
             >

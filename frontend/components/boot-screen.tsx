@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { playClick, playHover } from "@/lib/sounds"
 
 const BOOT_LINES = [
   { text: "Initializing node...", delay: 0 },
@@ -15,9 +16,11 @@ const BOOT_LINES = [
 
 interface BootScreenProps {
   onComplete: () => void
+  /** Called on first user gesture (Start click) so music can play despite autoplay rules */
+  onStartClick?: () => void
 }
 
-export function BootScreen({ onComplete }: BootScreenProps) {
+export function BootScreen({ onComplete, onStartClick }: BootScreenProps) {
   const [phase, setPhase] = useState<"intro" | "boot">("intro")
   const [visibleLines, setVisibleLines] = useState<number>(0)
   const [typingIndex, setTypingIndex] = useState<number>(0)
@@ -92,7 +95,12 @@ export function BootScreen({ onComplete }: BootScreenProps) {
             </div>
 
             <Button
-              onClick={() => setPhase("boot")}
+              onClick={() => {
+                onStartClick?.()
+                playClick()
+                setPhase("boot")
+              }}
+              onMouseEnter={playHover}
               className="w-full font-mono text-xs tracking-[0.2em] uppercase bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 hover:border-primary/50 rounded-xl h-11 transition-all duration-300"
             >
               Start

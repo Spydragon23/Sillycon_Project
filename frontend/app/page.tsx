@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { BootScreen } from "@/components/boot-screen"
 import { LoginScreen } from "@/components/login-screen"
 import { HandshakeScreen } from "@/components/handshake-screen"
@@ -27,6 +27,40 @@ export default function Page() {
   const [alias, setAlias] = useState("")
   const [selectedAgent, setSelectedAgent] = useState("")
   const [levelProgress, setLevelProgress] = useState<LevelProgress>(DEFAULT_PROGRESS)
+  const musicRef = useRef<HTMLAudioElement | null>(null)
+
+  // Start music (call on load and on first user gesture – browsers often block until interaction)
+  const startOpeningMusic = () => {
+    if (currentScreen !== "boot" && currentScreen !== "login" && currentScreen !== "handshake") return
+    if (!musicRef.current) {
+      const a = new Audio("/music.webm")
+      a.loop = true
+      a.volume = 0.5
+      musicRef.current = a
+    }
+    musicRef.current.play().catch(() => {})
+  }
+
+  // Opening music: try to play when on boot/login/handshake; stop when agent-select is shown
+  useEffect(() => {
+    if (currentScreen === "agent-select") {
+      if (musicRef.current) {
+        musicRef.current.pause()
+        musicRef.current.src = ""
+        musicRef.current = null
+      }
+      return
+    }
+    if (currentScreen === "boot" || currentScreen === "login" || currentScreen === "handshake") {
+      if (!musicRef.current) {
+        const a = new Audio("/music.webm")
+        a.loop = true
+        a.volume = 0.5
+        musicRef.current = a
+      }
+      musicRef.current.play().catch(() => {}) // may fail until user interacts
+    }
+  }, [currentScreen])
 
   // Load progress from localStorage on mount
   useEffect(() => {
@@ -69,7 +103,12 @@ const handleLogout = () => {
   setSelectedAgent(null)
 }
   if (currentScreen === "boot") {
-    return <BootScreen onComplete={() => setCurrentScreen("login")} />
+    return (
+      <BootScreen
+        onComplete={() => setCurrentScreen("login")}
+        onStartClick={startOpeningMusic}
+      />
+    )
   }
 
   if (currentScreen === "login") {
