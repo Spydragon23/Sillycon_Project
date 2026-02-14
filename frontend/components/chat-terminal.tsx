@@ -44,14 +44,18 @@ function getTimestamp() {
 
 interface ChatTerminalProps {
   selectedAgent: string
-  integrity: number
-  onIntegrityChange: (delta: number) => void
+  score: number  // Changed from integrity
+  scamAttempts: number  // NEW: Show attempts
+  onIntegrityChange?: (delta: number) => void
+  onScamResponse?: (wasCorrect: boolean) => void
 }
 
 export function ChatTerminal({
   selectedAgent,
-  integrity,
+  score,
+  scamAttempts,
   onIntegrityChange,
+  onScamResponse,
 }: ChatTerminalProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -64,7 +68,6 @@ export function ChatTerminal({
   const [inputValue, setInputValue] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [chatHistory, setChatHistory] = useState<ApiChatMessage[]>([])
-  const [chatHeadTriggerText, setChatHeadTriggerText] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const voiceRecordingMsgAdded = useRef(false)
@@ -75,6 +78,19 @@ export function ChatTerminal({
   const [cameraPermission, setCameraPermission] = useState(false)
   const [galleryPermission, setGalleryPermission] = useState(false)
   const [showCamera, setShowCamera] = useState(false)
+  const [popup, setPopup] = useState<null | { type: string; message: string }>(null)
+  const popupTimer = useRef<number | null>(null)
+  const showPopup = (type: string, message: string) => {
+  setPopup({ type, message })
+
+  if (popupTimer.current) window.clearTimeout(popupTimer.current)
+  popupTimer.current = window.setTimeout(() => setPopup(null), 3000)
+}
+useEffect(() => {
+  return () => {
+    if (popupTimer.current) window.clearTimeout(popupTimer.current)
+  }
+}, [])
 
   // Voice message / privacy demo
   const [showVoiceEducation, setShowVoiceEducation] = useState(false)
@@ -185,7 +201,6 @@ export function ChatTerminal({
       },
     ])
     setChatHistory([])
-    setChatHeadTriggerText("")
   }, [selectedAgent, agent?.name])
 
   const handleSend = async () => {
@@ -214,6 +229,20 @@ export function ChatTerminal({
       ]
       setChatHistory(newHistory)
 
+      // Check for feedback popup and track scoring (silent - no UI change)
+      if (response.feedback_popup?.show && onScamResponse) {
+  const t = String(response.feedback_popup.type || "").toLowerCase()
+  showPopup(response.feedback_popup.type, response.feedback_popup.message)
+
+  // Only count REAL scam outcomes
+  const isScorable = t === "success" || t === "danger"
+
+  if (isScorable) {
+    const wasCorrect = t === "success"
+    onScamResponse(wasCorrect)
+  }
+}
+
       // Add agent response
       const agentMsg: Message = {
         id: `agent-${Date.now()}`,
@@ -237,7 +266,6 @@ export function ChatTerminal({
             timestamp: getTimestamp(),
           }
           setMessages((prev) => [...prev, sysMsg])
-          onIntegrityChange(-Math.floor(Math.random() * 5 + 1))
         }, 1200)
       }
     } catch (error) {
@@ -276,7 +304,6 @@ export function ChatTerminal({
         timestamp: getTimestamp(),
       }
       setMessages((prev) => [...prev, sysMsg])
-      onIntegrityChange(-Math.floor(Math.random() * 3 + 2))
     }, 1000 + Math.random() * 800)
   }
 
@@ -308,8 +335,7 @@ export function ChatTerminal({
         timestamp: getTimestamp(),
       }
       setMessages((prev) => [...prev, sysMsg])
-      onIntegrityChange(-3)
-      // Open camera after a brief moment
+      // Open camera after a brief momonInteent
       setTimeout(() => setShowCamera(true), 400)
     } else if (permissionType === "gallery") {
       setGalleryPermission(true)
@@ -321,7 +347,6 @@ export function ChatTerminal({
         timestamp: getTimestamp(),
       }
       setMessages((prev) => [...prev, sysMsg])
-      onIntegrityChange(-2)
       setTimeout(() => fileInputRef.current?.click(), 400)
     }
   }
@@ -351,7 +376,28 @@ export function ChatTerminal({
   const latency = Math.floor(120 + Math.random() * 100)
 
   return (
+    
     <>
+    {popup && (
+  <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-4">
+    <div
+      className="rounded-xl border bg-black/80 px-4 py-3 shadow-lg backdrop-blur"
+      onClick={() => setPopup(null)}
+    >
+      <div className="font-semibold mb-1">
+        {popup.type === "success"
+          ? "Nice catch!"
+          : popup.type === "danger"
+          ? "Scam risk!"
+          : popup.type === "warning"
+          ? "Be careful"
+          : "Tip"}
+      </div>
+      <div className="text-sm">{popup.message}</div>
+    </div>
+  </div>
+)}
+
       <div className="glass-panel rounded-2xl h-full flex flex-col overflow-hidden relative scanline-overlay">
         {/* Top Bar */}
         <div className="px-4 py-3 border-b border-border/30 flex items-center justify-between shrink-0">
@@ -369,21 +415,21 @@ export function ChatTerminal({
           </div>
           <div className="flex items-center gap-3">
             <span className="font-mono text-[10px] text-muted-foreground">
-              Integrity:{" "}
+              Detection Score:{" "}
               <span
                 className={
-                  integrity > 50
+                  score > 70
                     ? "neon-text-green"
-                    : integrity > 25
+                    : score > 50
                     ? "text-accent"
                     : "neon-text-red"
                 }
               >
-                {integrity}%
+                {score}%
               </span>
             </span>
             <span className="font-mono text-[10px] text-muted-foreground/60">
-              ~{latency}ms
+              Attempts: {scamAttempts}
             </span>
           </div>
         </div>
