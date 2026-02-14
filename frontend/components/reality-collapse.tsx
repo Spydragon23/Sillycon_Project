@@ -1,13 +1,20 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { AlertTriangle, FileText } from "lucide-react"
+import { AlertTriangle, FileText, Shield } from "lucide-react"
+import { playClick, playHover } from "@/lib/sounds"
 
 interface RealityCollapseProps {
   integrity: number
   onReset: () => void
   onClose: () => void
 }
+
+const SAFETY_TIPS = [
+  "Revoke mic/camera in browser or device settings when you're done.",
+  "Don't share full name, school, address, or passwords with people you don't know.",
+  "If a site pressures you to allow access quickly, that's a red flag.",
+]
 
 export function RealityCollapse({ integrity, onReset, onClose }: RealityCollapseProps) {
   return (
@@ -37,7 +44,7 @@ export function RealityCollapse({ integrity, onReset, onClose }: RealityCollapse
           <div className="flex items-center justify-center gap-3 mb-6">
             <AlertTriangle className="w-5 h-5 text-destructive animate-pulse-slow" />
             <h2 className="font-mono text-sm tracking-[0.3em] neon-text-red uppercase font-bold">
-              Reality Collapse: Verdict
+              Safety report: verdict
             </h2>
           </div>
 
@@ -45,67 +52,74 @@ export function RealityCollapse({ integrity, onReset, onClose }: RealityCollapse
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-secondary/20 rounded-xl px-4 py-3 border border-border/20">
               <p className="font-mono text-[9px] text-muted-foreground uppercase tracking-widest mb-1">
-                Room
+                Session
               </p>
               <p className="font-mono text-xs text-foreground leading-relaxed">
-                The Fortress of Procrastination
+                Privacy education demo
               </p>
             </div>
             <div className="bg-secondary/20 rounded-xl px-4 py-3 border border-border/20">
               <p className="font-mono text-[9px] text-muted-foreground uppercase tracking-widest mb-1">
-                Integrity
+                Privacy integrity
               </p>
               <p className="font-mono text-2xl neon-text-red font-bold">{integrity}%</p>
             </div>
           </div>
 
-          {/* Artifacts Detected */}
+          {/* What was detected */}
           <div className="mb-5">
             <h3 className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.2em] mb-2">
-              Artifacts Detected
+              Risks in this session
             </h3>
             <div className="bg-secondary/15 rounded-xl px-4 py-3 border border-border/15 font-mono text-xs text-foreground/80 space-y-1.5 leading-relaxed">
-              <p>{">"} 4 empty coffee cups</p>
-              <p>{">"} 1 unsent email</p>
-              <p>{">"} 12 open browser tabs</p>
-              <p>{">"} The ghost of a deadline</p>
+              <p>{">"} Mic / voice access used or offered</p>
+              <p>{">"} Chat with simulated “agents” (educational)</p>
+              <p>{">"} Camera / gallery permissions (if you allowed)</p>
+              <p>{">"} Data sent to backend for transcription only</p>
             </div>
           </div>
 
-          {/* Primary Hazards */}
+          {/* Safety tips */}
           <div className="mb-6">
-            <h3 className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.2em] mb-2">
-              Primary Hazards
+            <h3 className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.2em] mb-2 flex items-center gap-1.5">
+              <Shield className="w-3 h-3" />
+              Remember
             </h3>
-            <div className="flex flex-wrap gap-2">
-              {["Narrative forming", "Motivation leak", "Temporal drift"].map(
-                (hazard) => (
-                  <span
-                    key={hazard}
-                    className="font-mono text-[10px] text-accent bg-accent/10 border border-accent/20 rounded-lg px-2.5 py-1"
-                  >
-                    {hazard}
-                  </span>
-                )
-              )}
+            <div className="flex flex-col gap-2">
+              {SAFETY_TIPS.map((tip) => (
+                <span
+                  key={tip}
+                  className="font-mono text-[10px] text-accent bg-accent/10 border border-accent/20 rounded-lg px-2.5 py-1.5 leading-relaxed"
+                >
+                  {tip}
+                </span>
+              ))}
             </div>
           </div>
 
           {/* Actions */}
           <div className="flex gap-3">
             <Button
-              onClick={onReset}
+              onClick={() => {
+                playClick()
+                onReset()
+              }}
+              onMouseEnter={playHover}
               className="flex-1 font-mono text-xs tracking-[0.15em] uppercase bg-destructive/10 text-destructive border border-destructive/30 hover:bg-destructive/20 hover:border-destructive/50 rounded-xl h-10 transition-all duration-300"
             >
-              Reset Reality
+              Back to chat
             </Button>
             <Button
-              onClick={onClose}
+              onClick={() => {
+                playClick()
+                onClose()
+              }}
+              onMouseEnter={playHover}
               variant="outline"
               className="flex-1 font-mono text-xs tracking-[0.15em] uppercase bg-secondary/20 text-muted-foreground border-border/30 hover:bg-secondary/40 rounded-xl h-10 transition-all duration-300"
             >
               <FileText className="w-3.5 h-3.5 mr-2" />
-              Save Report
+              Close report
             </Button>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { Mic, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { playClick, playHover } from "@/lib/sounds"
 
 interface VoiceEducationDialogProps {
   onContinue: () => void
@@ -69,14 +70,22 @@ export function VoiceEducationDialog({ onContinue, onClose }: VoiceEducationDial
         {/* Actions */}
         <div className="px-5 pb-5 flex gap-3">
           <Button
-            onClick={onClose}
+            onClick={() => {
+              playClick()
+              onClose()
+            }}
+            onMouseEnter={playHover}
             variant="outline"
             className="flex-1 font-mono text-[10px] tracking-[0.1em] uppercase bg-secondary/20 text-muted-foreground border-border/30 hover:bg-secondary/40 rounded-xl h-9 transition-all duration-300"
           >
             Cancel
           </Button>
           <Button
-            onClick={onContinue}
+            onClick={() => {
+              playClick()
+              onContinue()
+            }}
+            onMouseEnter={playHover}
             className="flex-1 font-mono text-[10px] tracking-[0.1em] uppercase bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 hover:border-primary/50 rounded-xl h-9 transition-all duration-300"
           >
             I understand, continue

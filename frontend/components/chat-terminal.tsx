@@ -11,6 +11,7 @@ import { SketchyPermissionDialog } from "@/components/sketchy-permission-dialog"
 import { VoiceEducationDialog } from "@/components/voice-education-dialog"
 import { CameraView } from "@/components/camera-view"
 import { sendChatMessage, uploadVoiceForTranscription, type ChatMessage as ApiChatMessage } from "@/lib/api"
+import { playClick, playHover } from "@/lib/sounds"
 import { useVoiceRecording } from "@/hooks/use-voice-recording"
 import { PirateAnimation } from "@/components/pirate-animation"
 import { TrollAnimation } from "@/components/troll-animation"
@@ -93,6 +94,10 @@ function AgentFlyToWebcam({
 
     const shootTimer = window.setTimeout(() => {
       didShoot = true
+
+      const gunshot = new Audio("/gunshot_sound.webm")
+      gunshot.volume = 0.6
+      gunshot.play().catch(() => {})
 
       const beam = beamRef.current
       if (beam) {
@@ -289,7 +294,7 @@ useEffect(() => {
     }
   }, [voiceState, voiceError])
 
-  // Voice: when recording stops and we have a blob, upload and add result messages
+  // Voice: when recording stops, transcribe then treat transcript like a text message (chat API + warnings)
   useEffect(() => {
     if (voiceState !== "stopped" || !voiceBlob || voiceUploading) return
     setVoiceUploading(true)
@@ -305,31 +310,86 @@ useEffect(() => {
     addTranscribingMsg()
     uploadVoiceForTranscription(voiceBlob)
       .then((res) => {
-        const transcriptPreview =
-          res.transcript.length > 120 ? res.transcript.slice(0, 120) + "…" : res.transcript
-        const transcriptMsg: Message = {
-          id: `sys-voice-txt-${Date.now()}`,
-          type: "system",
-          text: `TRANSCRIPT: ${transcriptPreview || "(no speech detected)"}`,
+        const transcript = (res.transcript || "").trim() || "(no speech detected)"
+        // Add user message (same as typing): voice content as the message
+        const userMsg: Message = {
+          id: `user-voice-${Date.now()}`,
+          type: "user",
+          text: `[Voice] ${transcript}`,
           timestamp: getTimestamp(),
         }
-        setMessages((prev) => [...prev, transcriptMsg])
-        if (res.sensitive_summary) {
+        setMessages((prev) => [...prev, userMsg])
+
+        // Send transcript to chat API so agent responds the same way as text
+        return sendChatMessage(transcript, selectedAgent, chatHistory).then((chatResponse) => ({
+          chatResponse,
+          transcript,
+          sensitiveSummary: res.sensitive_summary,
+        }))
+      })
+      .then(({ chatResponse, transcript, sensitiveSummary }) => {
+        // Update chat history with user + assistant
+        const newHistory: ApiChatMessage[] = [
+          ...chatHistory,
+          { role: "user", content: transcript },
+          { role: "assistant", content: chatResponse.response },
+        ]
+        setChatHistory(newHistory)
+
+        // Add agent response (same as text flow)
+        const agentMsg: Message = {
+          id: `agent-${Date.now()}`,
+          type: "agent",
+          text: chatResponse.response,
+          timestamp: getTimestamp(),
+        }
+        setMessages((prev) => [...prev, agentMsg])
+        setChatHeadTriggerText(chatResponse.response)
+
+        // Feedback popup + scoring if backend sent one
+        if (chatResponse.feedback_popup?.show && onScamResponse) {
+          const t = String(chatResponse.feedback_popup.type || "").toLowerCase()
+          showPopup(chatResponse.feedback_popup.type, chatResponse.feedback_popup.message)
+          if (t === "success" || t === "danger") onScamResponse(t === "success")
+        }
+
+        onIntegrityChange?.(-5)
+
+        // After a bit: "websites can still hear you" warning
+        const warningDelay = 1800
+        window.setTimeout(() => {
+          showPopup(
+            "warning",
+            "Websites can still hear you after you allow once—even if you don't see a red dot."
+          )
+        }, warningDelay)
+
+        // If something personal was picked up, send another message (system + popup)
+        const nothingPersonal =
+          !sensitiveSummary ||
+          /nothing personal was shared/i.test(sensitiveSummary)
+        if (!nothingPersonal && sensitiveSummary) {
           const analysisMsg: Message = {
             id: `sys-voice-ana-${Date.now()}`,
             type: "system",
-            text: `ANALYSIS (what was "heard"): ${res.sensitive_summary}`,
+            text: `AUDIO_INPUT picked up: ${sensitiveSummary}`,
             timestamp: getTimestamp(),
           }
           setMessages((prev) => [...prev, analysisMsg])
+          window.setTimeout(() => {
+            showPopup(
+              "warning",
+              `Something personal was detected in what you said. In real life, sites could use that.`
+            )
+          }, warningDelay + 2200)
         }
-        onIntegrityChange?.(-5)
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("Voice transcribe or chat failed:", err)
         const errMsg: Message = {
           id: `sys-voice-fail-${Date.now()}`,
           type: "system",
-          text: "[RELAY ERROR] Transcription failed. Check backend.",
+          text: "[RELAY ERROR] Transcription or chat failed. Check backend.",
           timestamp: getTimestamp(),
         }
         setMessages((prev) => [...prev, errMsg])
@@ -338,7 +398,7 @@ useEffect(() => {
         setVoiceUploading(false)
         resetVoice()
       })
-  }, [voiceState, voiceBlob, voiceUploading, onIntegrityChange, resetVoice])
+  }, [voiceState, voiceBlob, voiceUploading, selectedAgent, chatHistory, onIntegrityChange, onScamResponse, resetVoice])
 
   useEffect(() => {
     setMessages([
@@ -355,6 +415,7 @@ useEffect(() => {
 
   const handleSend = async () => {
     if (!inputValue.trim() || isLoading) return
+    playClick()
 
     const userMsg: Message = {
       id: `user-${Date.now()}`,
@@ -709,7 +770,11 @@ useEffect(() => {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={stopVoiceRecording}
+                  onClick={() => {
+                    playClick()
+                    stopVoiceRecording()
+                  }}
+                  onMouseEnter={playHover}
                   className="h-7 px-2 font-mono text-[9px] text-destructive hover:bg-destructive/10"
                 >
                   <Square className="w-3 h-3 mr-1" />
@@ -729,7 +794,11 @@ useEffect(() => {
             {/* Camera button */}
             <button
               type="button"
-              onClick={handleCameraClick}
+              onClick={() => {
+                playClick()
+                handleCameraClick()
+              }}
+              onMouseEnter={playHover}
               className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 border ${
                 cameraPermission
                   ? "bg-primary/10 border-primary/30 text-primary hover:bg-primary/20"
@@ -743,7 +812,11 @@ useEffect(() => {
             {/* Gallery button */}
             <button
               type="button"
-              onClick={handleGalleryClick}
+              onClick={() => {
+                playClick()
+                handleGalleryClick()
+              }}
+              onMouseEnter={playHover}
               className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 border ${
                 galleryPermission
                   ? "bg-primary/10 border-primary/30 text-primary hover:bg-primary/20"
@@ -757,7 +830,11 @@ useEffect(() => {
             {/* Voice message button */}
             <button
               type="button"
-              onClick={handleVoiceMessageClick}
+              onClick={() => {
+                playClick()
+                handleVoiceMessageClick()
+              }}
+              onMouseEnter={playHover}
               disabled={voiceState === "recording" || voiceState === "requesting" || voiceUploading}
               className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 border ${
                 voiceState === "recording" || voiceUploading
@@ -779,6 +856,7 @@ useEffect(() => {
               type="submit"
               size="sm"
               disabled={isLoading}
+              onMouseEnter={playHover}
               className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 hover:border-primary/50 rounded-full h-10 w-10 p-0 shrink-0 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Send message"
             >
@@ -847,10 +925,12 @@ useEffect(() => {
             <div className="mt-6">
               <Button
                 onClick={() => {
+                  playClick()
                   setGameOver(false)
                   setShowCamera(false)
                   setPlayAgentAnim(false)
                 }}
+                onMouseEnter={playHover}
                 className="h-12 px-6 rounded-2xl bg-destructive-foreground text-destructive hover:bg-destructive-foreground/90 font-mono font-bold"
               >
                 Back to Safety

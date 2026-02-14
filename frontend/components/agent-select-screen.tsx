@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { playClick, playHover } from "@/lib/sounds"
 import {
   Shield,
   Brain,
@@ -228,7 +229,7 @@ export function AgentSelectScreen({
 
   const handleSelect = (agent: Agent) => {
     if (!isLevelUnlocked(agent)) return  // Can't select locked levels
-    
+    playClick()
     setSelectedAgent(agent.id)
     setTimeout(() => onSelect(agent.id), 600)
   }
@@ -251,7 +252,11 @@ export function AgentSelectScreen({
       {/* Header */}
       <header className="relative z-10 px-6 pt-6 pb-4 shrink-0">
         <button
-          onClick={onBack}
+          onClick={() => {
+            playClick()
+            onBack()
+          }}
+          onMouseEnter={playHover}
           className="flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5 rounded-lg hover:bg-secondary/30 mb-4"
           aria-label="Go back"
           type="button"
@@ -285,7 +290,11 @@ export function AgentSelectScreen({
           </div>
           
           <Button
-            onClick={onResetProgress}
+            onClick={() => {
+              playClick()
+              onResetProgress()
+            }}
+            onMouseEnter={playHover}
             variant="outline"
             size="sm"
             className="font-mono text-xs"
@@ -312,8 +321,8 @@ export function AgentSelectScreen({
                 type="button"
                 onClick={() => handleSelect(agent)}
                 onMouseEnter={() => {
+                  playHover()
                   setHoveredAgent(agent.id)
-                  if (isUnlocked) beep()
                 }}
                 onMouseLeave={() => setHoveredAgent(null)}
                 onFocus={() => {

@@ -2,19 +2,20 @@
 
 import { Progress } from "@/components/ui/progress"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { AlertTriangle, Coffee, Mail, Ghost, Globe, Clock } from "lucide-react"
+import { playClick, playHover } from "@/lib/sounds"
+import { AlertTriangle, Mic, ShieldAlert, MessageSquare, Camera, Link2 } from "lucide-react"
 
 const WARNINGS = [
-  { text: "Narrative forming", icon: AlertTriangle },
-  { text: "Object meaning unstable", icon: AlertTriangle },
-  { text: "Temporal drift detected", icon: Clock },
+  { text: "Sites can listen after you allow mic once—even if you don't see a red dot.", icon: Mic },
+  { text: "Personal info shared in chat can be used by bad actors.", icon: AlertTriangle },
+  { text: "Camera and mic access can stay on until you revoke it.", icon: ShieldAlert },
 ]
 
 const ARTIFACTS = [
-  { label: "Empty coffee cup", confidence: 92, icon: Coffee },
-  { label: "Unsent email", confidence: 76, icon: Mail },
-  { label: "Ghost of a deadline", confidence: 43, icon: Ghost },
-  { label: "Open browser tab cluster", confidence: 88, icon: Globe },
+  { label: "Unmonitored mic access risk", confidence: 92, icon: Mic },
+  { label: "Personal data in conversation", confidence: 76, icon: MessageSquare },
+  { label: "Camera permission granted", confidence: 43, icon: Camera },
+  { label: "Untrusted link / script exposure", confidence: 88, icon: Link2 },
 ]
 
 interface SystemHudProps {
@@ -27,11 +28,14 @@ export function SystemHud({ integrity, onTriggerCollapse }: SystemHudProps) {
     <div className="glass-panel rounded-2xl h-full flex flex-col overflow-hidden">
       <ScrollArea className="flex-1">
         <div className="px-4 py-4 flex flex-col gap-5">
-          {/* Reality Integrity */}
+          {/* Privacy / safety integrity */}
           <section>
             <h3 className="font-mono text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-3">
-              Reality Integrity
+              Privacy integrity
             </h3>
+            <p className="font-mono text-[9px] text-muted-foreground/70 mb-2 max-w-[200px]">
+              How much you&apos;ve shared or allowed access. Lower = more exposed.
+            </p>
             <div className="text-center mb-3">
               <span
                 className={`font-mono text-4xl font-bold ${
@@ -75,11 +79,14 @@ export function SystemHud({ integrity, onTriggerCollapse }: SystemHudProps) {
           {/* Divider */}
           <div className="h-px bg-border/30" />
 
-          {/* Detected Artifacts */}
+          {/* Detected risks / awareness */}
           <section>
             <h3 className="font-mono text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-3">
-              Detected Artifacts
+              Detected risks
             </h3>
+            <p className="font-mono text-[9px] text-muted-foreground/70 mb-2 max-w-[200px]">
+              Things that can put your privacy at risk in this session.
+            </p>
             <div className="flex flex-col gap-2">
               {ARTIFACTS.map((artifact, i) => (
                 <div
@@ -109,13 +116,17 @@ export function SystemHud({ integrity, onTriggerCollapse }: SystemHudProps) {
           {/* Divider */}
           <div className="h-px bg-border/30" />
 
-          {/* Collapse Trigger */}
+          {/* Learn more / report */}
           <section>
             <button
-              onClick={onTriggerCollapse}
+              onClick={() => {
+                playClick()
+                onTriggerCollapse()
+              }}
+              onMouseEnter={playHover}
               className="w-full font-mono text-[10px] tracking-[0.2em] uppercase text-destructive/80 border border-destructive/20 bg-destructive/5 rounded-xl px-3 py-2.5 hover:bg-destructive/10 hover:border-destructive/30 transition-all duration-300"
             >
-              Force Reality Collapse
+              View safety report
             </button>
           </section>
         </div>
