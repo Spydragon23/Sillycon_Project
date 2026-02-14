@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# FastAPI
+*.log
+
+# Node (if using Next.js frontend)
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# Next.js
+.next/
+.vercel
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Misc
+*.pyc
+.cache/
