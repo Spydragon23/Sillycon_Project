@@ -68,6 +68,7 @@ export function ChatTerminal({
   const [inputValue, setInputValue] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [chatHistory, setChatHistory] = useState<ApiChatMessage[]>([])
+  const [chatHeadTriggerText, setChatHeadTriggerText] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const voiceRecordingMsgAdded = useRef(false)
@@ -201,6 +202,7 @@ useEffect(() => {
       },
     ])
     setChatHistory([])
+    setChatHeadTriggerText("")
   }, [selectedAgent, agent?.name])
 
   const handleSend = async () => {
