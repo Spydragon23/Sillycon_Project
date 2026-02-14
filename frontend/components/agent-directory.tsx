@@ -2,6 +2,8 @@
 
 import { ScrollArea } from "@/components/ui/scroll-area"
 
+import { AGENTS } from "@/components/agent-select-screen"
+
 export interface Agent {
   id: string
   name: string
@@ -9,33 +11,43 @@ export interface Agent {
   avatar: string
 }
 
-export const AGENTS: Agent[] = [
-  {
-    id: "archivist",
-    name: "The Archivist",
-    tagline: "Everything leaves a trace.",
-    avatar: "A",
-  },
-  {
-    id: "jester",
-    name: "The Jester",
-    tagline: "I broke something. Not sure what.",
-    avatar: "J",
-  },
-  {
-    id: "witness",
-    name: "The Witness",
-    tagline: "We are not alone in this node.",
-    avatar: "W",
-  },
-]
-
 interface AgentDirectoryProps {
   selectedAgent: string
   onSelectAgent: (id: string) => void
 }
 
 export function AgentDirectory({ selectedAgent, onSelectAgent }: AgentDirectoryProps) {
+  const beep = (() => {
+    let audioCtx: AudioContext | null = null
+    return () => {
+      try {
+        if (typeof window === "undefined") return
+        const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+        if (!Ctx) return
+        if (!audioCtx) audioCtx = new Ctx()
+        if (audioCtx.state === "suspended") void audioCtx.resume()
+
+        const osc = audioCtx.createOscillator()
+        const gain = audioCtx.createGain()
+
+        osc.type = "square"
+        osc.frequency.value = 740
+
+        gain.gain.setValueAtTime(0.0001, audioCtx.currentTime)
+        gain.gain.exponentialRampToValueAtTime(0.045, audioCtx.currentTime + 0.008)
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05)
+
+        osc.connect(gain)
+        gain.connect(audioCtx.destination)
+
+        osc.start(audioCtx.currentTime)
+        osc.stop(audioCtx.currentTime + 0.055)
+      } catch {
+        // ignore
+      }
+    }
+  })()
+
   return (
     <div className="glass-panel rounded-2xl h-full flex flex-col overflow-hidden">
       {/* Header */}
@@ -54,6 +66,8 @@ export function AgentDirectory({ selectedAgent, onSelectAgent }: AgentDirectoryP
               <button
                 key={agent.id}
                 onClick={() => onSelectAgent(agent.id)}
+                onMouseEnter={() => beep()}
+                onFocus={() => beep()}
                 className={`w-full text-left rounded-xl p-3 transition-all duration-300 group ${
                   isSelected
                     ? "glass-panel-active neon-border-cyan"
@@ -70,7 +84,12 @@ export function AgentDirectory({ selectedAgent, onSelectAgent }: AgentDirectoryP
                         : "bg-secondary/50 text-muted-foreground border border-border/30 group-hover:border-border/50"
                     }`}
                   >
-                    {agent.avatar}
+                    <img
+                      src={agent.avatar}
+                      alt={agent.name}
+                      className="h-full w-full rounded-full object-cover"
+                      draggable={false}
+                    />
                   </div>
 
                   {/* Info */}
