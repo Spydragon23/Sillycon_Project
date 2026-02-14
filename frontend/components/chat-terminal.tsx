@@ -252,6 +252,7 @@ useEffect(() => {
   } = useVoiceRecording({ durationSeconds: 60 })
   const [playAgentAnim, setPlayAgentAnim] = useState(false)
   const [gameOver, setGameOver] = useState(false)
+  const isFinalAgent = selectedAgent === "witness"
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -435,11 +436,19 @@ useEffect(() => {
 
   useEffect(() => {
     if (!showCamera) return
+    if (!isFinalAgent) return
+
     const t = window.setTimeout(() => {
       setPlayAgentAnim(true)
     }, 3000)
     return () => window.clearTimeout(t)
-  }, [showCamera])
+  }, [showCamera, isFinalAgent])
+
+  useEffect(() => {
+    if (isFinalAgent) return
+    setPlayAgentAnim(false)
+    setGameOver(false)
+  }, [isFinalAgent])
 
   const handleImageMessage = async (dataUrl: string) => {
     const userMsg: Message = {
@@ -816,7 +825,7 @@ useEffect(() => {
         />
       )}
 
-      {playAgentAnim && (
+      {isFinalAgent && playAgentAnim && (
         <AgentFlyToWebcam
           play={playAgentAnim}
           imageSrc="/cat-shooter.png"
@@ -825,7 +834,7 @@ useEffect(() => {
         />
       )}
 
-      {gameOver && (
+      {isFinalAgent && gameOver && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-destructive/55 backdrop-blur-sm" />
           <div className="relative w-full max-w-xl rounded-3xl border-2 border-destructive-foreground/30 bg-background/10 text-destructive-foreground shadow-2xl p-8 text-center">

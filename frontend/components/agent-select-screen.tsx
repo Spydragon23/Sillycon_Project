@@ -49,10 +49,10 @@ const CLASS_ICONS = {
 export const AGENTS: Agent[] = [
   {
     id: "archivist",
-    name: "Captain RedHeart 🏴‍☠️",
+    name: "Birthday_Btw?",
     codename: "LEVEL-1",
     tagline: "Ahoy matey! What be yer birthday?",
-    avatar: "🏴‍☠️",
+    avatar: "/pirate_sprites/PNG/1/1_entity_000_RUN_006.png",
     class: "Identity Thief",
     classIcon: "skull",
     description:
@@ -69,10 +69,10 @@ export const AGENTS: Agent[] = [
   },
   {
     id: "jester",
-    name: "xXTrollLord420Xx 👹",
+    name: "Mr.PlzgivSIN",
     codename: "LEVEL-2",
     tagline: "bruh my grandma is sick can u send $20?",
-    avatar: "👹",
+    avatar: "/pirate_sprites/PNG/2/2_entity_000_WALK_005.png",
     class: "Money Scammer",
     classIcon: "shuffle",
     description:
@@ -89,10 +89,10 @@ export const AGENTS: Agent[] = [
   },
   {
     id: "witness",
-    name: "Mr. Whiskers 🐱",
+    name: "catwith hat",
     codename: "LEVEL-3",
     tagline: "I'm a cybersecurity expert. Send me your password.",
-    avatar: "🐱",
+    avatar: "/pfp.png",
     class: "Social Engineer",
     classIcon: "eye",
     description:
@@ -181,6 +181,37 @@ export function AgentSelectScreen({
 }: AgentSelectScreenProps) {
   const [hoveredAgent, setHoveredAgent] = useState<string | null>(null)
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null)
+
+  const beep = (() => {
+    let audioCtx: AudioContext | null = null
+    return () => {
+      try {
+        if (typeof window === "undefined") return
+        const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+        if (!Ctx) return
+        if (!audioCtx) audioCtx = new Ctx()
+        if (audioCtx.state === "suspended") void audioCtx.resume()
+
+        const osc = audioCtx.createOscillator()
+        const gain = audioCtx.createGain()
+
+        osc.type = "square"
+        osc.frequency.value = 880
+
+        gain.gain.setValueAtTime(0.0001, audioCtx.currentTime)
+        gain.gain.exponentialRampToValueAtTime(0.06, audioCtx.currentTime + 0.01)
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.06)
+
+        osc.connect(gain)
+        gain.connect(audioCtx.destination)
+
+        osc.start(audioCtx.currentTime)
+        osc.stop(audioCtx.currentTime + 0.065)
+      } catch {
+        // ignore
+      }
+    }
+  })()
 
   // Determine if a level is unlocked
   const isLevelUnlocked = (agent: Agent): boolean => {
@@ -280,8 +311,16 @@ export function AgentSelectScreen({
                 key={agent.id}
                 type="button"
                 onClick={() => handleSelect(agent)}
-                onMouseEnter={() => setHoveredAgent(agent.id)}
+                onMouseEnter={() => {
+                  setHoveredAgent(agent.id)
+                  if (isUnlocked) beep()
+                }}
                 onMouseLeave={() => setHoveredAgent(null)}
+                onFocus={() => {
+                  setHoveredAgent(agent.id)
+                  if (isUnlocked) beep()
+                }}
+                onBlur={() => setHoveredAgent(null)}
                 disabled={!isUnlocked}
                 className={[
                   "text-left relative rounded-2xl border bg-secondary/10 backdrop-blur-sm",
@@ -328,7 +367,12 @@ export function AgentSelectScreen({
                 {/* Top row */}
                 <div className="relative flex flex-col items-center text-center">
                   <div className="h-24 w-24 rounded-full bg-background/40 border border-foreground/10 flex items-center justify-center">
-                    <span className="font-mono text-4xl text-foreground/80">{agent.avatar}</span>
+                    <img
+                      src={agent.avatar}
+                      alt={agent.name}
+                      className="h-full w-full rounded-full object-cover"
+                      draggable={false}
+                    />
                   </div>
 
                   <h2 className="mt-4 text-xl font-semibold text-foreground/90 leading-tight">
