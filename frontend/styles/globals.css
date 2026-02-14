@@ -99,3 +99,10 @@ nextjs-devtools,
 [data-nextjs-build-indicator] {
   display: none !important;
 }
+
+/* Pixelated rendering for sprite animations */
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
