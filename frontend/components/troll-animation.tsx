@@ -4,53 +4,48 @@ import { useEffect, useState, useRef } from "react"
 
 type AnimationType = "IDLE" | "WALK" | "RUN" | "ATTACK" | "HURT" | "JUMP" | "DIE"
 
-interface PirateAnimationProps {
+interface TrollAnimationProps {
   agentId: string
   messageText: string
   className?: string
 }
 
-// Map keywords from backend responses to animation types
+// Troll personality: begging, scamming, excited when user agrees
 const ANIMATION_TRIGGERS: Record<AnimationType, string[]> = {
-  IDLE: [], // Fallback when nothing else matches
-  WALK: ["looking", "searching", "wondering", "tell me", "what"],
-  RUN: ["quick", "fast", "hurry", "wait", "need"],
+  IDLE: [],
+  WALK: ["wut", "tell me", "what", "how", "why"],
+  RUN: ["quick", "fast", "hurry", "need", "asap", "pls", "please"],
   ATTACK: [
-    "arrr",
-    "yarr",
-    "treasure",
-    "gold",
-    "booty",
-    "plunder",
-    "steal",
-    "account",
-    "ssn",
-    "credit card",
-    "password",
-    "bank",
-    "driver",
-    "legal name",
+    "venmo",
+    "cashapp",
+    "gift card",
+    "send",
+    "money",
+    "paypal",
+    "steam",
+    "itunes",
+    "amazon",
+    "$",
+    "dollars",
   ],
-  HURT: ["no", "stop", "police", "fbi", "fraud", "scam", "reported", "blocked"],
+  HURT: ["no", "stop", "scam", "fake", "reported", "blocked", "wrong"],
   JUMP: [
-    "yes!",
-    "birthday",
-    "1995",
-    "1990",
-    "1985",
-    "social",
-    "mother",
-    "maiden",
-    "date of birth",
+    "yes",
+    "okay",
+    "ok",
+    "sure",
+    "here",
+    "sent",
+    "done",
+    "ily",
     "love",
-    "beautiful",
-    "astrology",
-    "genealog",
+    "tysm",
+    "thanks",
+    "thx",
   ],
-  DIE: ["goodbye", "leave", "never", "blocked", "reported", "bye"],
+  DIE: ["goodbye", "leave", "never", "blocked", "bye", "later"],
 }
 
-// Check in this order: most specific first, IDLE last
 const ANIMATION_PRIORITY: AnimationType[] = [
   "JUMP",
   "ATTACK",
@@ -64,33 +59,34 @@ const ANIMATION_PRIORITY: AnimationType[] = [
 // Chance to actually play when keywords match (stops common words hogging one animation)
 const TRIGGER_CHANCE: Record<AnimationType, number> = {
   IDLE: 1,
-  JUMP: 0.85,
-  ATTACK: 0.8,
+  JUMP: 0.8,
+  ATTACK: 0.75,
   HURT: 0.85,
   DIE: 0.9,
   RUN: 0.45,
   WALK: 0.4,
 }
 
-const PIRATE_VARIANTS = [1, 2, 3] as const
-type PirateVariant = (typeof PIRATE_VARIANTS)[number]
+const TROLL_VARIANTS = [1, 2, 3] as const
+type TrollVariant = (typeof TROLL_VARIANTS)[number]
 
-function getRandomVariant(): PirateVariant {
-  return PIRATE_VARIANTS[Math.floor(Math.random() * PIRATE_VARIANTS.length)]
+const TROLL_FRAME_COUNT = 10 // 000-009
+
+function getRandomVariant(): TrollVariant {
+  return TROLL_VARIANTS[Math.floor(Math.random() * TROLL_VARIANTS.length)]
 }
 
-export function PirateAnimation({
+export function TrollAnimation({
   agentId,
   messageText,
   className = "",
-}: PirateAnimationProps) {
-  const [pirateVariant] = useState<PirateVariant>(getRandomVariant)
+}: TrollAnimationProps) {
+  const [trollVariant] = useState<TrollVariant>(getRandomVariant)
   const [currentAnimation, setCurrentAnimation] = useState<AnimationType>("IDLE")
   const [frameIndex, setFrameIndex] = useState(0)
   const [isAnimating, setIsAnimating] = useState(true)
   const animationRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Detect which animation to play based on message content (with randomness so common words don't hog)
   useEffect(() => {
     const messageLower = messageText.toLowerCase().trim()
     let detectedAnimation: AnimationType = "IDLE"
@@ -110,27 +106,22 @@ export function PirateAnimation({
     setFrameIndex(0)
     setIsAnimating(true)
 
-    // Reset to IDLE after one shot animation completes
     if (detectedAnimation !== "IDLE") {
       const timeout = setTimeout(() => {
         setCurrentAnimation("IDLE")
         setFrameIndex(0)
-      }, 800) // Play one full cycle (7 frames * ~100ms) then idle
+      }, 1000) // 10 frames * 100ms
 
       return () => clearTimeout(timeout)
     }
   }, [messageText])
 
-  // Animate frames
   useEffect(() => {
     if (!isAnimating) return
 
     animationRef.current = setInterval(() => {
-      setFrameIndex((prev) => {
-        const nextFrame = (prev + 1) % 7 // 7 frames (000-006)
-        return nextFrame
-      })
-    }, 100) // 100ms per frame = 10fps
+      setFrameIndex((prev) => (prev + 1) % TROLL_FRAME_COUNT)
+    }, 100)
 
     return () => {
       if (animationRef.current) {
@@ -139,24 +130,20 @@ export function PirateAnimation({
     }
   }, [isAnimating, currentAnimation])
 
-  // Only show for pirate agent
-  if (agentId !== "archivist") return null
+  if (agentId !== "jester") return null
 
   const framePadded = String(frameIndex).padStart(3, "0")
-  const imagePath =
-    pirateVariant === 3
-      ? `/pirate_sprites/PNG/3/3_3-PIRATE_${currentAnimation}_${framePadded}.png`
-      : `/pirate_sprites/PNG/${pirateVariant}/${pirateVariant}_entity_000_${currentAnimation}_${framePadded}.png`
+  const imagePath = `/troll_sprites/_PNG/${trollVariant}_TROLL/Troll_0${trollVariant}_1_${currentAnimation}_${framePadded}.png`
 
   return (
     <div
       className={`relative w-32 h-32 ${className}`}
-      title={`Animation: ${currentAnimation}`}
+      title={`Troll: ${currentAnimation}`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={imagePath}
-        alt={`Pirate ${currentAnimation}`}
+        alt={`Troll ${currentAnimation}`}
         className="absolute inset-0 w-full h-full object-contain pixelated"
       />
     </div>
