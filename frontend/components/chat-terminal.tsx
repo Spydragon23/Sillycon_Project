@@ -11,6 +11,7 @@ import { SketchyPermissionDialog } from "@/components/sketchy-permission-dialog"
 import { CameraView } from "@/components/camera-view"
 import { sendChatMessage, type ChatMessage as ApiChatMessage } from "@/lib/api"
 import { PirateAnimation } from "@/components/pirate-animation"
+import { TrollAnimation } from "@/components/troll-animation"
 
 interface Message {
   id: string
@@ -125,8 +126,8 @@ export function ChatTerminal({
       }
       setMessages((prev) => [...prev, agentMsg])
 
-      // Drive chat head animation from latest pirate response
-      if (selectedAgent === "archivist") {
+      // Drive chat head animation from latest response (pirate or troll)
+      if (selectedAgent === "archivist" || selectedAgent === "jester") {
         setChatHeadTriggerText(response.response)
       }
 
@@ -283,10 +284,19 @@ export function ChatTerminal({
           </div>
         </div>
 
-        {/* Single chat head - pirate only, animations trigger from latest response */}
+        {/* Single chat head - animations trigger from latest response */}
         {selectedAgent === "archivist" && (
           <div className="shrink-0 flex justify-center py-4 px-2 border-b border-border/20 bg-background/30">
             <PirateAnimation
+              agentId={selectedAgent}
+              messageText={chatHeadTriggerText}
+              className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44"
+            />
+          </div>
+        )}
+        {selectedAgent === "jester" && (
+          <div className="shrink-0 flex justify-center py-4 px-2 border-b border-border/20 bg-background/30">
+            <TrollAnimation
               agentId={selectedAgent}
               messageText={chatHeadTriggerText}
               className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44"
