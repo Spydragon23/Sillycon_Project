@@ -7,8 +7,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
+from dotenv import load_dotenv
 
-from backend.routers import chat
+# Load environment variables from .env file
+load_dotenv()
+
+from routers import chat  # ✅ Changed from backend.routers
 
 # Create FastAPI app
 app = FastAPI(
@@ -21,11 +25,11 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",  # React dev server
-        "http://localhost:5173",  # Vite dev server  
+        "http://localhost:3000",
+        "http://localhost:5173",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
-        "*"  # Allow all origins in development (remove in production!)
+        "*"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -35,7 +39,7 @@ app.add_middleware(
 # Include routers
 app.include_router(chat.router, prefix="/api", tags=["chat"])
 
-# Serve static files (animations, images)
+# Serve static files
 if os.path.exists("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -67,5 +71,5 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True  # Auto-reload on code changes
+        reload=True
     )

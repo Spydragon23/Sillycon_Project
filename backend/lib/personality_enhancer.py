@@ -123,7 +123,7 @@ PERSONALITY_CONFIG = {
     },
     
     "hitman_cat": {
-        "name": "Meow Wick 🐱",
+        "name": "Cat with the Hat 🐱",
         "animal": "Cat",
         
         # Text transformations - formal + deadly
