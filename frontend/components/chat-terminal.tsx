@@ -10,6 +10,7 @@ import { type Agent, AGENTS } from "@/components/agent-select-screen"
 import { SketchyPermissionDialog } from "@/components/sketchy-permission-dialog"
 import { CameraView } from "@/components/camera-view"
 import { sendChatMessage, type ChatMessage as ApiChatMessage } from "@/lib/api"
+import { PirateAnimation } from "@/components/pirate-animation"
 
 interface Message {
   id: string
@@ -59,6 +60,7 @@ export function ChatTerminal({
   const [inputValue, setInputValue] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [chatHistory, setChatHistory] = useState<ApiChatMessage[]>([])
+  const [chatHeadTriggerText, setChatHeadTriggerText] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const agent = AGENTS.find((a) => a.id === selectedAgent) as Agent
@@ -85,6 +87,7 @@ export function ChatTerminal({
       },
     ])
     setChatHistory([])
+    setChatHeadTriggerText("")
   }, [selectedAgent, agent?.name])
 
   const handleSend = async () => {
@@ -121,6 +124,11 @@ export function ChatTerminal({
         timestamp: getTimestamp(),
       }
       setMessages((prev) => [...prev, agentMsg])
+
+      // Drive chat head animation from latest pirate response
+      if (selectedAgent === "archivist") {
+        setChatHeadTriggerText(response.response)
+      }
 
       // Maybe add a system message
       if (Math.random() > 0.5) {
@@ -274,6 +282,17 @@ export function ChatTerminal({
             </span>
           </div>
         </div>
+
+        {/* Single chat head - pirate only, animations trigger from latest response */}
+        {selectedAgent === "archivist" && (
+          <div className="shrink-0 flex justify-center py-4 px-2 border-b border-border/20 bg-background/30">
+            <PirateAnimation
+              agentId={selectedAgent}
+              messageText={chatHeadTriggerText}
+              className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44"
+            />
+          </div>
+        )}
 
         {/* Messages */}
         <ScrollArea className="flex-1 px-4 py-3" ref={scrollRef}>

@@ -93,13 +93,6 @@ body {
   }
 }
 
-nextjs-portal,
-nextjs-devtools,
-[data-nextjs-devtools],
-[data-nextjs-build-indicator] {
-  display: none !important;
-}
-
 /* Pixelated rendering for sprite animations */
 .pixelated {
   image-rendering: pixelated;
