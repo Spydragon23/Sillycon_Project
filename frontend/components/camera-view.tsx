@@ -218,7 +218,10 @@ export function CameraView({ onClose, onCapture }: CameraViewProps) {
 
             {/* Crosshair center */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-16 h-16 border border-primary/10 rounded-full" />
+              <div
+                id="webcam-overlay"
+                className="w-16 h-16 border border-primary/10 rounded-full"
+              />
               <div className="absolute w-px h-6 bg-primary/15" />
               <div className="absolute w-6 h-px bg-primary/15" />
             </div>

@@ -28,6 +28,11 @@ export interface ChatResponse {
   response: string
   emotion: string
   shouldExpand: boolean
+  feedback_popup?: {
+    show: boolean
+    type: string
+    message: string
+  }
 }
 
 /**
