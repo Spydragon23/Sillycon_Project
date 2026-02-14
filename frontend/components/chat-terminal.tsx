@@ -5,13 +5,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Send, Camera, ImageIcon } from "lucide-react"
+import { Send, Camera, ImageIcon, Mic, Square } from "lucide-react"
 import { type Agent, AGENTS } from "@/components/agent-select-screen"
 import { SketchyPermissionDialog } from "@/components/sketchy-permission-dialog"
+import { VoiceEducationDialog } from "@/components/voice-education-dialog"
 import { CameraView } from "@/components/camera-view"
-import { sendChatMessage, type ChatMessage as ApiChatMessage } from "@/lib/api"
+import { sendChatMessage, uploadVoiceForTranscription, type ChatMessage as ApiChatMessage } from "@/lib/api"
+import { useVoiceRecording } from "@/hooks/use-voice-recording"
 import { PirateAnimation } from "@/components/pirate-animation"
 import { TrollAnimation } from "@/components/troll-animation"
+import { CatGifHead } from "@/components/cat-gif-head"
 
 interface Message {
   id: string
@@ -67,6 +70,7 @@ export function ChatTerminal({
   const [chatHistory, setChatHistory] = useState<ApiChatMessage[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const voiceRecordingMsgAdded = useRef(false)
   const agent = AGENTS.find((a) => a.id === selectedAgent) as Agent
 
   // Permission state
@@ -88,11 +92,104 @@ useEffect(() => {
   }
 }, [])
 
+  // Voice message / privacy demo
+  const [showVoiceEducation, setShowVoiceEducation] = useState(false)
+  const [voiceUploading, setVoiceUploading] = useState(false)
+  const {
+    state: voiceState,
+    error: voiceError,
+    blob: voiceBlob,
+    secondsRemaining: voiceSecondsRemaining,
+    startRecording: startVoiceRecording,
+    stopRecording: stopVoiceRecording,
+    reset: resetVoice,
+  } = useVoiceRecording({ durationSeconds: 60 })
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [messages])
+
+  // Voice: add system message when recording starts (once per session)
+  useEffect(() => {
+    if (voiceState === "recording" && !voiceRecordingMsgAdded.current) {
+      voiceRecordingMsgAdded.current = true
+      const sysMsg: Message = {
+        id: `sys-voice-start-${Date.now()}`,
+        type: "system",
+        text: "AUDIO_INPUT active. Recording. Relay will transcribe and analyze.",
+        timestamp: getTimestamp(),
+      }
+      setMessages((prev) => [...prev, sysMsg])
+      onIntegrityChange(-2)
+    }
+    if (voiceState === "idle" || voiceState === "stopped") voiceRecordingMsgAdded.current = false
+  }, [voiceState, onIntegrityChange])
+
+  // Voice: add system message on mic error (denied or failed)
+  useEffect(() => {
+    if (voiceState === "error" && voiceError) {
+      const sysMsg: Message = {
+        id: `sys-voice-err-${Date.now()}`,
+        type: "system",
+        text: "AUDIO_INPUT access denied or unavailable.",
+        timestamp: getTimestamp(),
+      }
+      setMessages((prev) => [...prev, sysMsg])
+    }
+  }, [voiceState, voiceError])
+
+  // Voice: when recording stops and we have a blob, upload and add result messages
+  useEffect(() => {
+    if (voiceState !== "stopped" || !voiceBlob || voiceUploading) return
+    setVoiceUploading(true)
+    const addTranscribingMsg = () => {
+      const sysMsg: Message = {
+        id: `sys-voice-xcr-${Date.now()}`,
+        type: "system",
+        text: "AUDIO_INPUT stream closed. Transcribing and analyzing...",
+        timestamp: getTimestamp(),
+      }
+      setMessages((prev) => [...prev, sysMsg])
+    }
+    addTranscribingMsg()
+    uploadVoiceForTranscription(voiceBlob)
+      .then((res) => {
+        const transcriptPreview =
+          res.transcript.length > 120 ? res.transcript.slice(0, 120) + "…" : res.transcript
+        const transcriptMsg: Message = {
+          id: `sys-voice-txt-${Date.now()}`,
+          type: "system",
+          text: `TRANSCRIPT: ${transcriptPreview || "(no speech detected)"}`,
+          timestamp: getTimestamp(),
+        }
+        setMessages((prev) => [...prev, transcriptMsg])
+        if (res.sensitive_summary) {
+          const analysisMsg: Message = {
+            id: `sys-voice-ana-${Date.now()}`,
+            type: "system",
+            text: `ANALYSIS (what was "heard"): ${res.sensitive_summary}`,
+            timestamp: getTimestamp(),
+          }
+          setMessages((prev) => [...prev, analysisMsg])
+        }
+        onIntegrityChange(-5)
+      })
+      .catch(() => {
+        const errMsg: Message = {
+          id: `sys-voice-fail-${Date.now()}`,
+          type: "system",
+          text: "[RELAY ERROR] Transcription failed. Check backend.",
+          timestamp: getTimestamp(),
+        }
+        setMessages((prev) => [...prev, errMsg])
+      })
+      .finally(() => {
+        setVoiceUploading(false)
+        resetVoice()
+      })
+  }, [voiceState, voiceBlob, voiceUploading, onIntegrityChange, resetVoice])
 
   useEffect(() => {
     setMessages([
@@ -155,10 +252,8 @@ useEffect(() => {
       }
       setMessages((prev) => [...prev, agentMsg])
 
-      // Drive chat head animation from latest response (pirate or troll)
-      if (selectedAgent === "archivist" || selectedAgent === "jester") {
-        setChatHeadTriggerText(response.response)
-      }
+      // Drive chat head from latest response (pirate / troll animation, cat random GIF)
+      setChatHeadTriggerText(response.response)
 
       // Maybe add a system message
       if (Math.random() > 0.5) {
@@ -256,6 +351,15 @@ useEffect(() => {
     }
   }
 
+  const handleVoiceMessageClick = () => {
+    setShowVoiceEducation(true)
+  }
+
+  const handleVoiceEducationContinue = () => {
+    setShowVoiceEducation(false)
+    startVoiceRecording()
+  }
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -349,6 +453,14 @@ useEffect(() => {
             />
           </div>
         )}
+        {selectedAgent === "witness" && (
+          <div className="shrink-0 flex justify-center py-4 px-2 border-b border-border/20 bg-background/30">
+            <CatGifHead
+              triggerText={chatHeadTriggerText}
+              className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44"
+            />
+          </div>
+        )}
 
         {/* Messages */}
         <ScrollArea className="flex-1 px-4 py-3" ref={scrollRef}>
@@ -417,6 +529,30 @@ useEffect(() => {
 
         {/* Input Area */}
         <div className="px-4 py-3 border-t border-border/30 shrink-0">
+          {/* Recording strip: show when voice is recording or uploading */}
+          {(voiceState === "recording" || voiceUploading) && (
+            <div className="mb-2 flex items-center justify-between rounded-lg bg-primary/10 border border-primary/20 px-3 py-2">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
+                <span className="font-mono text-[10px] text-accent/90 uppercase tracking-wider">
+                  {voiceUploading ? "Transcribing…" : `Recording — ${voiceSecondsRemaining}s left`}
+                </span>
+              </div>
+              {voiceState === "recording" && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={stopVoiceRecording}
+                  className="h-7 px-2 font-mono text-[9px] text-destructive hover:bg-destructive/10"
+                >
+                  <Square className="w-3 h-3 mr-1" />
+                  Stop
+                </Button>
+              )}
+            </div>
+          )}
+
           <form
             onSubmit={(e) => {
               e.preventDefault()
@@ -450,6 +586,21 @@ useEffect(() => {
               aria-label="Open gallery"
             >
               <ImageIcon className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Voice message button */}
+            <button
+              type="button"
+              onClick={handleVoiceMessageClick}
+              disabled={voiceState === "recording" || voiceState === "requesting" || voiceUploading}
+              className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 border ${
+                voiceState === "recording" || voiceUploading
+                  ? "bg-primary/10 border-primary/30 text-primary"
+                  : "bg-secondary/20 border-border/30 text-muted-foreground/50 hover:text-muted-foreground hover:bg-secondary/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              }`}
+              aria-label="Send voice message"
+            >
+              <Mic className="w-3.5 h-3.5" />
             </button>
 
             <Input
@@ -497,6 +648,14 @@ useEffect(() => {
             handleImageMessage(dataUrl)
             setShowCamera(false)
           }}
+        />
+      )}
+
+      {/* Voice education dialog: theme-matched message before requesting mic */}
+      {showVoiceEducation && (
+        <VoiceEducationDialog
+          onContinue={handleVoiceEducationContinue}
+          onClose={() => setShowVoiceEducation(false)}
         />
       )}
     </>
