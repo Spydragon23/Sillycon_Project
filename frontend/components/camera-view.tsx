@@ -17,6 +17,7 @@ export function CameraView({ onClose, onCapture }: CameraViewProps) {
   const [error, setError] = useState<string | null>(null)
   const [flash, setFlash] = useState(false)
   const [overlayText, setOverlayText] = useState("FEED ACTIVE")
+  const [showSafetyWarning, setShowSafetyWarning] = useState(true)
 
   const startCamera = useCallback(async (facing: "user" | "environment") => {
     try {
@@ -111,6 +112,69 @@ export function CameraView({ onClose, onCapture }: CameraViewProps) {
 
       {/* Video Area */}
       <div className="flex-1 relative overflow-hidden bg-secondary/10">
+        {!error && showSafetyWarning && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center px-4">
+            <div
+              className="absolute inset-0 bg-background/40 backdrop-blur-sm"
+              onClick={() => setShowSafetyWarning(false)}
+            />
+
+            <div className="relative z-10 w-full max-w-xl rounded-3xl border-2 border-destructive bg-destructive text-destructive-foreground shadow-2xl">
+              <div className="p-6 sm:p-8">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 w-10 h-10 rounded-xl bg-destructive-foreground/10 border border-destructive-foreground/20 flex items-center justify-center">
+                      <Camera className="w-5 h-5 text-destructive-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-mono text-lg sm:text-xl font-bold tracking-wider uppercase">
+                        Danger: Camera Access Granted
+                      </p>
+                      <p className="font-mono text-base sm:text-lg font-bold leading-snug mt-3">
+                        If this was a real dark web scam, a hacker could now have your face and your surroundings.
+                      </p>
+                      <p className="font-mono text-sm sm:text-base leading-relaxed mt-3 text-destructive-foreground/90">
+                        They could use it to impersonate you, track you, or pressure you. Never show private details like your school name,
+                        address, IDs, or documents.
+                      </p>
+                      <p className="font-mono text-sm sm:text-base leading-relaxed mt-3 text-destructive-foreground/90">
+                        If youre not sure, stop and ask a trusted adult.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setShowSafetyWarning(false)}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-destructive-foreground/80 hover:text-destructive-foreground hover:bg-destructive-foreground/10 transition-colors"
+                    aria-label="Dismiss safety warning"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                  <Button
+                    onClick={() => {
+                      stream?.getTracks().forEach((t) => t.stop())
+                      onClose()
+                    }}
+                    className="w-full sm:w-auto sm:flex-1 bg-destructive-foreground text-destructive hover:bg-destructive-foreground/90 rounded-2xl h-12 font-mono text-base font-bold"
+                  >
+                    Back to Safety
+                  </Button>
+                  <Button
+                    onClick={() => setShowSafetyWarning(false)}
+                    variant="outline"
+                    className="w-full sm:w-auto sm:flex-1 border-destructive-foreground/40 text-destructive-foreground bg-transparent hover:bg-destructive-foreground/10 rounded-2xl h-12 font-mono text-base font-bold"
+                  >
+                    Continue
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {error ? (
           <div className="absolute inset-0 flex items-center justify-center p-6">
             <div className="glass-panel rounded-2xl px-6 py-8 text-center max-w-sm">
