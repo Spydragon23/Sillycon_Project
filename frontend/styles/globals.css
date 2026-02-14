@@ -92,3 +92,10 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+nextjs-portal,
+nextjs-devtools,
+[data-nextjs-devtools],
+[data-nextjs-build-indicator] {
+  display: none !important;
+}
