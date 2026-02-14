@@ -1,0 +1,156 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 260 20% 4%;
+    --foreground: 180 15% 85%;
+    --card: 260 15% 8%;
+    --card-foreground: 180 15% 85%;
+    --popover: 260 15% 8%;
+    --popover-foreground: 180 15% 85%;
+    --primary: 180 60% 45%;
+    --primary-foreground: 260 20% 4%;
+    --secondary: 260 15% 14%;
+    --secondary-foreground: 180 15% 75%;
+    --muted: 260 12% 12%;
+    --muted-foreground: 260 8% 50%;
+    --accent: 15 80% 50%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 260 15% 16%;
+    --input: 260 15% 14%;
+    --ring: 180 60% 45%;
+    --chart-1: 180 60% 45%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 15 80% 50%;
+    --chart-4: 280 40% 50%;
+    --chart-5: 120 50% 40%;
+    --radius: 1rem;
+    --sidebar-background: 260 18% 6%;
+    --sidebar-foreground: 180 15% 85%;
+    --sidebar-primary: 180 60% 45%;
+    --sidebar-primary-foreground: 260 20% 4%;
+    --sidebar-accent: 260 15% 12%;
+    --sidebar-accent-foreground: 180 15% 75%;
+    --sidebar-border: 260 15% 16%;
+    --sidebar-ring: 180 60% 45%;
+    --neon-cyan: 180 100% 50%;
+    --neon-red: 0 85% 55%;
+    --neon-green: 140 70% 45%;
+    --neon-violet: 270 50% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Scanline effect */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.8; }
+  94% { opacity: 1; }
+  96% { opacity: 0.9; }
+  97% { opacity: 1; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes typing-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes noise {
+  0%, 100% { background-position: 0 0; }
+  10% { background-position: -5% -10%; }
+  20% { background-position: -15% 5%; }
+  30% { background-position: 7% -25%; }
+  40% { background-position: 20% 25%; }
+  50% { background-position: -25% 10%; }
+  60% { background-position: 15% 5%; }
+  70% { background-position: 0% 15%; }
+  80% { background-position: 25% 35%; }
+  90% { background-position: -10% 10%; }
+}
+
+.scanline-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+.flicker-effect {
+  animation: flicker 4s infinite;
+}
+
+.glass-panel {
+  background: rgba(15, 10, 30, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 255, 255, 0.08);
+}
+
+.glass-panel-active {
+  background: rgba(15, 10, 30, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.05), inset 0 0 30px rgba(0, 255, 255, 0.02);
+}
+
+.neon-text-cyan {
+  color: hsl(180, 100%, 50%);
+  text-shadow: 0 0 7px hsla(180, 100%, 50%, 0.5), 0 0 20px hsla(180, 100%, 50%, 0.2);
+}
+
+.neon-text-red {
+  color: hsl(0, 85%, 55%);
+  text-shadow: 0 0 7px hsla(0, 85%, 55%, 0.5), 0 0 20px hsla(0, 85%, 55%, 0.2);
+}
+
+.neon-text-green {
+  color: hsl(140, 70%, 45%);
+  text-shadow: 0 0 7px hsla(140, 70%, 45%, 0.5), 0 0 20px hsla(140, 70%, 45%, 0.2);
+}
+
+.neon-border-cyan {
+  border-color: rgba(0, 255, 255, 0.3);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.1), inset 0 0 15px rgba(0, 255, 255, 0.03);
+}
+
+.typing-cursor::after {
+  content: '\2588';
+  animation: typing-cursor 1s infinite;
+  color: hsl(180, 100%, 50%);
+}
