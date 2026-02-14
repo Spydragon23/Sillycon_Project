@@ -8,7 +8,7 @@ import re
 
 PERSONALITY_CONFIG = {
     "pirate_thief": {
-        "name": "Captain RedHeart 🏴‍☠️",
+        "name": "Captain TotallyLegitimate 🏴‍☠️",
         "animal": "Pirate",
         
         # Text transformations - pirate speak + identity theft
@@ -66,7 +66,7 @@ PERSONALITY_CONFIG = {
     },
     
     "troll_scammer": {
-        "name": "xXTrollLord420Xx 👹",
+        "name": "TrustMeBroOfficial 👹",
         "animal": "Troll",
         
         # Text transformations - internet speak
@@ -123,7 +123,7 @@ PERSONALITY_CONFIG = {
     },
     
     "hitman_cat": {
-        "name": "Mr. Whiskers 🐱",
+        "name": "Meow Wick 🐱",
         "animal": "Cat",
         
         # Text transformations - formal + deadly
