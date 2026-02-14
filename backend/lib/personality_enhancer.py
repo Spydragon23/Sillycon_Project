@@ -5,6 +5,16 @@ Converts boring Claude responses into hilarious criminal flirting
 
 import random
 import re
+import json
+from pathlib import Path
+
+# Load emoji patterns from personality module
+try:
+    _EMOJI_PATH = Path(__file__).parent.parent / "emojipatterns.json"
+    with open(_EMOJI_PATH, encoding="utf-8") as f:
+        EMOJI_PATTERNS = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    EMOJI_PATTERNS = {}
 
 PERSONALITY_CONFIG = {
     "pirate_thief": {
@@ -179,6 +189,94 @@ PERSONALITY_CONFIG = {
 }
 
 
+def add_emoji_spam(text: str, personality: str, context: str = "default") -> str:
+    """
+    Add random emoji spam to text based on personality.
+    
+    Args:
+        text: The response text
+        personality: "pirate_thief", "troll_scammer", or "hitman_cat"
+        context: "default", "excited", "begging", etc.
+    
+    Returns:
+        Text with emojis added
+    """
+    # Map personality names to emoji pattern keys
+    emoji_key_map = {
+        "pirate_thief": "pirate",
+        "troll_scammer": "troll",
+        "hitman_cat": "hitman_cat"
+    }
+    
+    emoji_key = emoji_key_map.get(personality, personality)
+    emojis = EMOJI_PATTERNS.get(emoji_key, {}).get(context, [])
+    
+    if not emojis:
+        emojis = EMOJI_PATTERNS.get(emoji_key, {}).get("default", [])
+    
+    if not emojis:
+        return text
+    
+    chosen_emoji = random.choice(emojis)
+    
+    # Sometimes spam multiple times (20% chance)
+    if random.random() < 0.2:
+        spam_count = random.randint(2, 4)
+        # For single emojis, repeat them
+        if len(chosen_emoji) <= 2:
+            chosen_emoji = chosen_emoji * spam_count
+    
+    return f"{text} {chosen_emoji}"
+
+
+def detect_emoji_context(text: str, personality: str, user_message: str) -> str:
+    """
+    Determine which emoji context to use based on the conversation.
+    
+    Returns: context string like "excited", "begging", "professional"
+    """
+    text_lower = text.lower()
+    user_lower = user_message.lower()
+    
+    if personality == "pirate_thief":
+        if any(word in user_lower for word in ["birthday", "ssn", "social", "mother"]):
+            return "excited"
+        elif any(word in text_lower for word in ["treasure", "gold", "booty"]):
+            return "scheming"
+        return "default"
+    
+    elif personality == "troll_scammer":
+        if any(word in text_lower for word in ["please", "pls", "need", "help", "broke"]):
+            return "begging"
+        elif any(word in user_lower for word in ["yes", "okay", "sure", "here"]):
+            return "scamming"
+        return "default"
+    
+    elif personality == "hitman_cat":
+        if any(word in text_lower for word in ["contract", "deal", "hired"]):
+            return "contract"
+        elif any(word in text_lower for word in ["professional", "business", "service"]):
+            return "professional"
+        return "default"
+    
+    return "default"
+
+
+def random_emoji_burst(personality: str) -> str:
+    """
+    Occasionally spam a LOT of emojis for comedic effect.
+    """
+    if random.random() < 0.1:
+        bursts = {
+            "pirate_thief": "🏴‍☠️⚔️💀🏴‍☠️⚔️💀",
+            "troll_scammer": "😂😂😂💸💸💸🤑🤑",
+            "hitman_cat": "🔪🔫🐱🔪🔫🐱",
+        }
+        return bursts.get(personality, "")
+    
+    return ""
+
+
 def enhance_response(base_text: str, personality: str, user_message: str = "") -> str:
     """
     Enhance a base Claude response with criminal flirting personality
@@ -189,7 +287,7 @@ def enhance_response(base_text: str, personality: str, user_message: str = "") -
         user_message: What the user said (for context)
     
     Returns:
-        Enhanced response with personality quirks
+        Enhanced response with personality quirks and emoji spam
     """
     config = PERSONALITY_CONFIG.get(personality)
     if not config:
@@ -204,7 +302,17 @@ def enhance_response(base_text: str, personality: str, user_message: str = "") -
             if any(trigger in user_lower for trigger in triggers):
                 responses = config["special_responses"].get(context, [])
                 if responses:
-                    return random.choice(responses)
+                    enhanced = random.choice(responses)
+                    # Apply emoji spam to special responses too
+                    emoji_context = detect_emoji_context(enhanced, personality, user_message)
+                    enhanced = add_emoji_spam(enhanced, personality, emoji_context)
+                    
+                    # Optional emoji burst
+                    burst = random_emoji_burst(personality)
+                    if burst:
+                        enhanced = f"{enhanced}\n{burst}"
+                    
+                    return enhanced
     
     # Apply text pattern transformations
     for pattern, replacement in config.get("patterns", []):
@@ -214,6 +322,15 @@ def enhance_response(base_text: str, personality: str, user_message: str = "") -
     endings = config.get("endings", [])
     if endings:
         enhanced = enhanced.rstrip('.!?') + random.choice(endings)
+    
+    # Apply emoji spam
+    emoji_context = detect_emoji_context(enhanced, personality, user_message)
+    enhanced = add_emoji_spam(enhanced, personality, emoji_context)
+    
+    # Optional emoji burst
+    burst = random_emoji_burst(personality)
+    if burst:
+        enhanced = f"{enhanced}\n{burst}"
     
     return enhanced
 
