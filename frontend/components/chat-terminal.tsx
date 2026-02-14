@@ -42,6 +42,151 @@ function getTimestamp() {
   })
 }
 
+function AgentFlyToWebcam({
+  play,
+  imageSrc,
+  onShoot,
+  onDone,
+}: {
+  play: boolean
+  imageSrc: string
+  onShoot: () => void
+  onDone: () => void
+}) {
+  const tokenRef = useRef<HTMLDivElement | null>(null)
+  const beamRef = useRef<HTMLDivElement | null>(null)
+  const flashRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!play) return
+
+    const token = tokenRef.current
+    if (!token) return
+
+    const target = document.getElementById("webcam-overlay")
+    if (!target) return
+
+    const targetRect = target.getBoundingClientRect()
+    const endX = targetRect.left + targetRect.width / 2
+    const endY = targetRect.top + targetRect.height / 2
+
+    const startX = -120
+    const startY = window.innerHeight * 0.5
+
+    const midX = window.innerWidth * 0.5
+    const midY = window.innerHeight * 0.5
+
+    let didShoot = false
+    const anim = token.animate(
+      [
+        { transform: `translate(${startX}px, ${startY}px) scale(1)`, opacity: 0.0 },
+        { transform: `translate(${startX + 60}px, ${startY}px) scale(1)`, opacity: 1.0, offset: 0.08 },
+        { transform: `translate(${midX}px, ${midY}px) scale(1)`, opacity: 1.0, offset: 0.66 },
+        { transform: `translate(${midX}px, ${midY}px) scale(1)`, opacity: 1.0 },
+      ],
+      {
+        duration: 12000,
+        easing: "cubic-bezier(.2,.9,.2,1)",
+        fill: "forwards",
+      }
+    )
+
+    const shootTimer = window.setTimeout(() => {
+      didShoot = true
+
+      const beam = beamRef.current
+      if (beam) {
+        const left = Math.min(midX, endX)
+        const width = Math.max(0, Math.abs(endX - midX))
+        beam.style.left = `${left}px`
+        beam.style.top = `${midY}px`
+        beam.style.width = `${width}px`
+        beam.style.transformOrigin = endX >= midX ? "left center" : "right center"
+        beam.animate(
+        [
+          { opacity: 0, transform: "scaleX(0.2)" },
+          { opacity: 1, transform: "scaleX(1)" },
+          { opacity: 0, transform: "scaleX(1.15)" },
+        ],
+        { duration: 260, easing: "ease-out", fill: "forwards" }
+        )
+      }
+      const flash = flashRef.current
+      if (flash) {
+        flash.animate(
+          [
+            { opacity: 0 },
+            { opacity: 1, offset: 0.05 },
+            { opacity: 1, offset: 0.85 },
+            { opacity: 0, offset: 1 },
+          ],
+          { duration: 2000, easing: "linear", fill: "forwards" }
+        )
+      }
+      onShoot()
+
+      anim.cancel()
+
+      const fadeOut = token.animate(
+        [
+          { opacity: 1, transform: `translate(${midX}px, ${midY}px) scale(1)` },
+          { opacity: 0, transform: `translate(${midX}px, ${midY}px) scale(0.85)` },
+        ],
+        { duration: 350, easing: "ease-in", fill: "forwards" }
+      )
+
+      fadeOut.onfinish = () => onDone()
+    }, 8000)
+
+    anim.onfinish = () => {
+      if (didShoot) return
+      window.clearTimeout(shootTimer)
+      const fade = token.animate(
+        [
+          { opacity: 1, transform: `translate(${midX}px, ${midY}px) scale(1)` },
+          { opacity: 0, transform: `translate(${midX}px, ${midY}px) scale(0.7)` },
+        ],
+        { duration: 600, easing: "ease-in", fill: "forwards" }
+      )
+      fade.onfinish = () => onDone()
+    }
+
+    return () => {
+      window.clearTimeout(shootTimer)
+      anim.cancel()
+    }
+  }, [play, onDone, onShoot])
+
+  return (
+    <div className="pointer-events-none fixed inset-0 z-[9999]">
+      <div ref={flashRef} className="absolute inset-0 bg-white opacity-0" />
+      <div
+        ref={beamRef}
+        className="absolute h-1 origin-left bg-[hsl(0,85%,55%)] shadow-[0_0_18px_hsla(0,85%,55%,0.6)] opacity-0"
+        style={{
+          left: 0,
+          top: 0,
+          width: 0,
+          transform: "scaleX(0.2)",
+        }}
+      />
+
+      <div
+        ref={tokenRef}
+        className="absolute -translate-x-1/2 -translate-y-1/2 w-[220px] h-[220px]"
+        style={{ left: 0, top: 0 }}
+      >
+        <img
+          src={imageSrc}
+          alt="Cat shooter"
+          className="w-full h-full object-contain select-none tilt-to-and-fro"
+          draggable={false}
+        />
+      </div>
+    </div>
+  )
+}
+
 interface ChatTerminalProps {
   selectedAgent: string
   score: number  // Changed from integrity
@@ -105,6 +250,8 @@ useEffect(() => {
     stopRecording: stopVoiceRecording,
     reset: resetVoice,
   } = useVoiceRecording({ durationSeconds: 60 })
+  const [playAgentAnim, setPlayAgentAnim] = useState(false)
+  const [gameOver, setGameOver] = useState(false)
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -123,7 +270,7 @@ useEffect(() => {
         timestamp: getTimestamp(),
       }
       setMessages((prev) => [...prev, sysMsg])
-      onIntegrityChange(-2)
+      onIntegrityChange?.(-2)
     }
     if (voiceState === "idle" || voiceState === "stopped") voiceRecordingMsgAdded.current = false
   }, [voiceState, onIntegrityChange])
@@ -175,7 +322,7 @@ useEffect(() => {
           }
           setMessages((prev) => [...prev, analysisMsg])
         }
-        onIntegrityChange(-5)
+        onIntegrityChange?.(-5)
       })
       .catch(() => {
         const errMsg: Message = {
@@ -233,17 +380,17 @@ useEffect(() => {
 
       // Check for feedback popup and track scoring (silent - no UI change)
       if (response.feedback_popup?.show && onScamResponse) {
-  const t = String(response.feedback_popup.type || "").toLowerCase()
-  showPopup(response.feedback_popup.type, response.feedback_popup.message)
+        const t = String(response.feedback_popup.type || "").toLowerCase()
+        showPopup(response.feedback_popup.type, response.feedback_popup.message)
 
-  // Only count REAL scam outcomes
-  const isScorable = t === "success" || t === "danger"
+        // Only count REAL scam outcomes
+        const isScorable = t === "success" || t === "danger"
 
-  if (isScorable) {
-    const wasCorrect = t === "success"
-    onScamResponse(wasCorrect)
-  }
-}
+        if (isScorable) {
+          const wasCorrect = t === "success"
+          onScamResponse(wasCorrect)
+        }
+      }
 
       // Add agent response
       const agentMsg: Message = {
@@ -285,6 +432,14 @@ useEffect(() => {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (!showCamera) return
+    const t = window.setTimeout(() => {
+      setPlayAgentAnim(true)
+    }, 3000)
+    return () => window.clearTimeout(t)
+  }, [showCamera])
 
   const handleImageMessage = async (dataUrl: string) => {
     const userMsg: Message = {
@@ -659,6 +814,41 @@ useEffect(() => {
           onContinue={handleVoiceEducationContinue}
           onClose={() => setShowVoiceEducation(false)}
         />
+      )}
+
+      {playAgentAnim && (
+        <AgentFlyToWebcam
+          play={playAgentAnim}
+          imageSrc="/cat-shooter.png"
+          onShoot={() => window.setTimeout(() => setGameOver(true), 2000)}
+          onDone={() => setPlayAgentAnim(false)}
+        />
+      )}
+
+      {gameOver && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-destructive/55 backdrop-blur-sm" />
+          <div className="relative w-full max-w-xl rounded-3xl border-2 border-destructive-foreground/30 bg-background/10 text-destructive-foreground shadow-2xl p-8 text-center">
+            <p className="font-mono text-[12px] tracking-[0.35em] uppercase opacity-90">Unauthorized Capture</p>
+            <h2 className="mt-3 text-5xl font-extrabold tracking-wider">GAME OVER</h2>
+            <p className="mt-4 font-mono text-base leading-relaxed opacity-90">
+              In real life, a scammer could grab your face, your room, and your location.
+              Never allow camera access unless a trusted adult says it's safe.
+            </p>
+            <div className="mt-6">
+              <Button
+                onClick={() => {
+                  setGameOver(false)
+                  setShowCamera(false)
+                  setPlayAgentAnim(false)
+                }}
+                className="h-12 px-6 rounded-2xl bg-destructive-foreground text-destructive hover:bg-destructive-foreground/90 font-mono font-bold"
+              >
+                Back to Safety
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   )
