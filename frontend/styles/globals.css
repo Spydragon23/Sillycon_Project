@@ -93,6 +93,36 @@ body {
   }
 }
 
+@keyframes tilt-to-and-fro {
+  0% {
+    transform: rotate(-18deg) translateY(0px);
+  }
+  25% {
+    transform: rotate(4deg) translateY(-7px);
+  }
+  50% {
+    transform: rotate(18deg) translateY(0px);
+  }
+  75% {
+    transform: rotate(-4deg) translateY(-7px);
+  }
+  100% {
+    transform: rotate(-18deg) translateY(0px);
+  }
+}
+
+.tilt-to-and-fro {
+  animation: tilt-to-and-fro 0.9s ease-in-out infinite;
+  transform-origin: 40% 60%;
+}
+
+nextjs-portal,
+nextjs-devtools,
+[data-nextjs-devtools],
+[data-nextjs-build-indicator] {
+  display: none !important;
+}
+
 /* Pixelated rendering for sprite animations */
 .pixelated {
   image-rendering: pixelated;

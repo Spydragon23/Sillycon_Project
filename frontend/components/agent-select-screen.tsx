@@ -229,32 +229,29 @@ export function AgentSelectScreen({ onSelect, onBack }: AgentSelectScreenProps) 
                 />
 
                 {/* Top row */}
-                <div className="relative flex items-start gap-4">
-                  <div className="h-14 w-14 rounded-2xl bg-background/40 border border-foreground/10 flex items-center justify-center">
-                    <span className="font-mono text-xl text-foreground/70">{agent.avatar}</span>
+                <div className="relative flex flex-col items-center text-center">
+                  <div className="h-24 w-24 rounded-full bg-background/40 border border-foreground/10 flex items-center justify-center">
+                    <span className="font-mono text-4xl text-foreground/80">{agent.avatar}</span>
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-3">
-                      <h2 className="text-lg font-semibold text-foreground/90 truncate">
-                        {agent.name}
-                      </h2>
-                      <Badge
-                        variant="secondary"
-                        className={[
-                          "font-mono text-[10px] tracking-wider bg-background/40 border border-foreground/10",
-                          getThreatColor(agent.threat),
-                        ].join(" ")}
-                      >
-                        {agent.codename}
-                      </Badge>
-                    </div>
+                  <h2 className="mt-4 text-xl font-semibold text-foreground/90 leading-tight">
+                    {agent.name}
+                  </h2>
 
-                    <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                      <Icon className="h-3.5 w-3.5 opacity-80" />
-                      <span className="uppercase tracking-[0.2em]">{agent.class}</span>
-                    </div>
+                  <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                    <Icon className="h-3.5 w-3.5 opacity-80" />
+                    <span className="uppercase tracking-[0.2em]">{agent.class}</span>
                   </div>
+
+                  <Badge
+                    variant="secondary"
+                    className={[
+                      "mt-3 font-mono text-[10px] tracking-wider bg-background/40 border border-foreground/10",
+                      getThreatColor(agent.threat),
+                    ].join(" ")}
+                  >
+                    {agent.codename}
+                  </Badge>
                 </div>
 
                 {/* Tagline + description */}
