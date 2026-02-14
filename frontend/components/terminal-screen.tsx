@@ -14,14 +14,46 @@ interface TerminalScreenProps {
   selectedAgent: string
   onBack: () => void
   onLogout: () => void
+  onComplete?: (agentId: string) => void
 }
 
-export function TerminalScreen({ alias, selectedAgent, onBack, onLogout }: TerminalScreenProps) {
-  const [integrity, setIntegrity] = useState(67)
+export function TerminalScreen({ alias, selectedAgent, onBack, onLogout, onComplete }: TerminalScreenProps) {
+  const [integrity, setIntegrity] = useState(67)  // Keep for reality collapse if needed
   const [collapsed, setCollapsed] = useState(false)
+
+  // Score tracking (replaces integrity display)
+  const [scamScore, setScamScore] = useState({ attempts: 0, correct: 0, failed: 0 })
+  const MIN_ATTEMPTS = 5
+
+  // Calculate score percentage
+  const getScorePercentage = () => {
+    if (scamScore.attempts === 0) return 0 // Start at 100%
+    return Math.round((scamScore.correct / scamScore.attempts) * 100)
+  }
 
   const handleIntegrityChange = (delta: number) => {
     setIntegrity((prev) => Math.max(0, Math.min(100, prev + delta)))
+  }
+
+  // Track scam responses
+  const handleScamResponse = (wasCorrect: boolean) => {
+    const newScore = {
+      attempts: scamScore.attempts + 1,
+      correct: scamScore.correct + (wasCorrect ? 1 : 0),
+      failed: scamScore.failed + (wasCorrect ? 0 : 1),
+    }
+    setScamScore(newScore)
+
+    // Check if level complete (80%+ after 5 attempts)
+    if (newScore.attempts >= MIN_ATTEMPTS) {
+      const percentage = Math.round((newScore.correct / newScore.attempts) * 100)
+      if (percentage >= 80 && onComplete) {
+        // Level complete! Wait a moment then trigger
+        setTimeout(() => {
+          onComplete(selectedAgent)
+        }, 2000)
+      }
+    }
   }
 
   return (
@@ -59,14 +91,14 @@ export function TerminalScreen({ alias, selectedAgent, onBack, onLogout }: Termi
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Mobile HUD trigger */}
+          {/* Mobile Score trigger */}
           <Sheet>
             <SheetTrigger asChild>
               <button
                 className="lg:hidden flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5 rounded-lg hover:bg-secondary/30"
                 aria-label="Open system HUD"
               >
-                <span className="font-mono text-[10px]">{integrity}%</span>
+                <span className="font-mono text-[10px]">{getScorePercentage()}%</span>
                 <Activity className="w-3.5 h-3.5" />
               </button>
             </SheetTrigger>
@@ -74,7 +106,8 @@ export function TerminalScreen({ alias, selectedAgent, onBack, onLogout }: Termi
               <SheetTitle className="sr-only">System HUD</SheetTitle>
               <div className="h-full pt-10">
                 <SystemHud
-                  integrity={integrity}
+                  integrity={getScorePercentage()}
+                  scamScore={scamScore}
                   onTriggerCollapse={() => setCollapsed(true)}
                 />
               </div>
@@ -98,16 +131,18 @@ export function TerminalScreen({ alias, selectedAgent, onBack, onLogout }: Termi
         <main className="flex-1 p-3 min-w-0">
           <ChatTerminal
             selectedAgent={selectedAgent}
-            integrity={integrity}
+            score={getScorePercentage()}
+            scamAttempts={scamScore.attempts}
             onIntegrityChange={handleIntegrityChange}
+            onScamResponse={handleScamResponse}
           />
         </main>
 
         {/* Right Sidebar - System HUD */}
         <aside className="hidden lg:block w-64 xl:w-72 p-3 shrink-0">
           <SystemHud
-            integrity={integrity}
-            onTriggerCollapse={() => setCollapsed(true)}
+            integrity={getScorePercentage()}
+            scamScore={scamScore}
           />
         </aside>
       </div>
@@ -118,17 +153,6 @@ export function TerminalScreen({ alias, selectedAgent, onBack, onLogout }: Termi
       {/* Glitch Alerts */}
       <GlitchAlerts />
 
-      {/* Reality Collapse Overlay */}
-      {collapsed && (
-        <RealityCollapse
-          integrity={integrity}
-          onReset={() => {
-            setIntegrity(67)
-            setCollapsed(false)
-          }}
-          onClose={() => setCollapsed(false)}
-        />
-      )}
     </div>
   )
 }
