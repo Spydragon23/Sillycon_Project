@@ -92,3 +92,10 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Pixelated rendering for sprite animations */
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
